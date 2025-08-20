@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Check, X, ChevronDown, Filter, Search, Globe, Grid } from "lucide-react";
+import { MobileFilterDropdown } from "./mobile-filter-dropdown";
 
 interface DrilldownsProps {
   drilldowns: any;
@@ -50,15 +51,22 @@ export function Drilldowns({ drilldowns, activeFilter }: DrilldownsProps) {
 
       {/* Query Explorer */}
       <TabsContent value="query-explorer" className="space-y-4">
-        <Card className="bg-gradient-card border-0 shadow-md">
+        <Card className="bg-gradient-card border-0 shadow-lg">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center space-x-2">
-                <Search className="h-5 w-5" />
+              <CardTitle className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <Search className="h-4 w-4 text-white" />
+                </div>
                 <span>Query Explorer</span>
               </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
+              
+              {/* Desktop Filters */}
+              <div className="hidden md:flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Filter className="h-4 w-4" />
+                  <span>Filter:</span>
+                </div>
                 <div className="flex space-x-1">
                   {["all", "yes", "no"].map((filter) => (
                     <Button
@@ -66,11 +74,20 @@ export function Drilldowns({ drilldowns, activeFilter }: DrilldownsProps) {
                       variant={brandFilter === filter ? "default" : "outline"}
                       size="sm"
                       onClick={() => setBrandFilter(filter as any)}
+                      className="transition-all"
                     >
                       {filter === "all" ? "All" : filter === "yes" ? "Brand Present" : "Brand Absent"}
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              {/* Mobile Filter Dropdown */}
+              <div className="md:hidden">
+                <MobileFilterDropdown 
+                  currentFilter={brandFilter}
+                  onFilterChange={setBrandFilter}
+                />
               </div>
             </div>
           </CardHeader>
@@ -193,10 +210,12 @@ export function Drilldowns({ drilldowns, activeFilter }: DrilldownsProps) {
 
       {/* Sources Detail */}
       <TabsContent value="sources" className="space-y-4">
-        <Card className="bg-gradient-card border-0 shadow-md">
+        <Card className="bg-gradient-card border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Globe className="h-5 w-5" />
+            <CardTitle className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-secondary rounded-lg flex items-center justify-center">
+                <Globe className="h-4 w-4 text-white" />
+              </div>
               <span>Sources Detail</span>
             </CardTitle>
           </CardHeader>
@@ -241,10 +260,12 @@ export function Drilldowns({ drilldowns, activeFilter }: DrilldownsProps) {
 
       {/* Attributes Matrix */}
       <TabsContent value="attributes" className="space-y-4">
-        <Card className="bg-gradient-card border-0 shadow-md">
+        <Card className="bg-gradient-card border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Grid className="h-5 w-5" />
+            <CardTitle className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-accent rounded-lg flex items-center justify-center">
+                <Grid className="h-4 w-4 text-white" />
+              </div>
               <span>Attributes Matrix</span>
             </CardTitle>
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
