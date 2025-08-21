@@ -122,25 +122,23 @@ const Dashboard = () => {
           <div className="text-center space-y-6 mb-12">
             <div className="space-y-4">
               <h1 className="text-5xl md:text-6xl font-bold">
-                We <span className="bg-gradient-primary bg-clip-text text-transparent">otter</span> know where
+                Are You <span className="bg-gradient-primary bg-clip-text text-transparent">Invisible</span> in AI
               </h1>
-              <h2 className="text-5xl md:text-6xl font-bold">
-                <span className="bg-gradient-primary bg-clip-text text-transparent">your brand</span> shows up on
-              </h2>
-              <h3 className="text-5xl md:text-6xl font-bold">AI Search</h3>
+              <h2 className="text-5xl md:text-6xl font-bold">Search?</h2>
             </div>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Get your brand mentioned, and your website cited on ChatGPT, Perplexity, AI Overviews, 
-              AI Mode, Gemini, and Copilot. It's otterly simple.
+              GeoRankers is the definitive AI search optimization platform that helps B2B SaaS companies track, 
+              optimize, and build the brand authority needed to get visible in AI search across leading AI models 
+              like ChatGPT and Gemini.
             </p>
           </div>
 
           {/* Form Card */}
           <Card className="bg-white dark:bg-card border border-border shadow-card rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-primary-pink/5 to-primary-purple/5 border-b border-border/50">
-              <CardTitle className="text-2xl font-semibold">Start Your Free 14-Day Trial</CardTitle>
+            <CardHeader className="bg-gradient-to-r from-primary-blue/5 to-primary-light/5 border-b border-border/50">
+              <CardTitle className="text-2xl font-semibold">Join the Waitlist</CardTitle>
               <CardDescription className="text-base">
-                Monitor your brand across AI search platforms instantly
+                Monitor your brand across AI search platforms
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
@@ -194,7 +192,7 @@ const Dashboard = () => {
                           <Badge
                             key={index}
                             variant="secondary"
-                            className="pl-4 pr-2 py-2 text-sm bg-gradient-to-r from-primary-pink/10 to-primary-purple/10 border border-primary/20 rounded-full"
+                            className="pl-4 pr-2 py-2 text-sm bg-gradient-to-r from-primary-blue/10 to-primary-light/10 border border-primary/20 rounded-full"
                           >
                             {keyword}
                             <Button
@@ -232,14 +230,14 @@ const Dashboard = () => {
                     ) : (
                       <>
                         <Search className="mr-3 h-5 w-5" />
-                        Start Your Free 14-Day Trial
+                        Join the Waitlist
                       </>
                     )}
                   </Button>
 
                   {/* Trusted by text */}
                   <p className="text-center text-sm text-muted-foreground font-medium">
-                    Trusted by 5,000+ Marketing and SEO Professionals
+                    Be among the first to access AI search optimization
                   </p>
 
                   {/* Example Link */}
