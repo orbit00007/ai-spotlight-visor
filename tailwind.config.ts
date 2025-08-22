@@ -27,9 +27,7 @@ export default {
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
-					hover: 'hsl(var(--primary-hover))',
-					blue: 'hsl(var(--primary-blue))',
-					light: 'hsl(var(--primary-light))'
+					hover: 'hsl(var(--primary-hover))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -92,9 +90,7 @@ export default {
 				'sm': 'var(--shadow-sm)',
 				'md': 'var(--shadow-md)',
 				'lg': 'var(--shadow-lg)',
-				'glow': 'var(--shadow-glow)',
-				'card': 'var(--shadow-card)',
-				'elevated': 'var(--shadow-elevated)'
+				'glow': 'var(--shadow-glow)'
 			},
 			keyframes: {
 				'accordion-down': {

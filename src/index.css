@@ -16,24 +16,22 @@
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
     
-    /* Primary: GeoRankers Blue */
-    --primary: 221 61% 65%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 221 61% 58%;
-    --primary-blue: 221 61% 65%;
-    --primary-light: 221 61% 85%;
+    /* Primary: Modern blue for AI tools */
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 221 83% 45%;
     
-    /* Secondary: Light blue tones */
-    --secondary: 221 61% 96%;
-    --secondary-foreground: 221 61% 20%;
+    /* Secondary: Neutral gray */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 46%;
     
     /* Muted backgrounds */
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
     
-    /* Accent: Yellow for highlights */
-    --accent: 48 96% 53%;
-    --accent-foreground: 0 0% 0%;
+    /* Accent: Purple for highlights */
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 98%;
     
     /* Status colors */
     --destructive: 0 84% 60%;
@@ -48,22 +46,20 @@
     --input: 220 13% 91%;
     --ring: 221 83% 53%;
     
-    /* Gradients - GeoRankers style */
-    --gradient-primary: linear-gradient(135deg, hsl(221 61% 65%), hsl(240 61% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(240 61% 75%), hsl(221 61% 65%));
-    --gradient-accent: linear-gradient(90deg, hsl(48 96% 53%), hsl(45 100% 51%));
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(262 83% 58%));
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(158 64% 52%));
     --gradient-warning: linear-gradient(135deg, hsl(25 95% 53%), hsl(43 96% 56%));
     --gradient-destructive: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 72% 51%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(221 61% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(221 61% 65% / 0.05), hsl(240 61% 75% / 0.05));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 99%));
+    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53% / 0.1), hsl(262 83% 58% / 0.1));
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 20px hsl(221 61% 65% / 0.3);
-    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
-    --shadow-elevated: 0 10px 25px -5px hsl(221 61% 65% / 0.15), 0 8px 10px -6px hsl(221 61% 65% / 0.1);
+    --shadow-glow: 0 0 20px hsl(221 83% 53% / 0.3);
     
     --radius: 0.75rem;
 
@@ -95,12 +91,10 @@
     --popover: 224 64% 6%;
     --popover-foreground: 0 0% 98%;
     
-    /* Primary: GeoRankers Blue in dark mode */
-    --primary: 221 61% 65%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 221 61% 58%;
-    --primary-blue: 221 61% 65%;
-    --primary-light: 221 61% 85%;
+    /* Primary: Bright blue in dark mode */
+    --primary: 221 83% 63%;
+    --primary-foreground: 224 71% 4%;
+    --primary-hover: 221 83% 55%;
     
     /* Secondary: Dark gray */
     --secondary: 215 25% 15%;
@@ -110,9 +104,9 @@
     --muted: 215 25% 15%;
     --muted-foreground: 217 10% 64%;
     
-    /* Accent: Yellow in dark mode */
-    --accent: 48 96% 53%;
-    --accent-foreground: 0 0% 0%;
+    /* Accent: Brighter purple in dark */
+    --accent: 262 83% 68%;
+    --accent-foreground: 224 71% 4%;
     
     /* Status colors - adjusted for dark mode */
     --success: 142 76% 46%;
@@ -127,22 +121,20 @@
     --input: 215 25% 20%;
     --ring: 221 83% 63%;
     
-    /* Dark mode gradients - GeoRankers style */
-    --gradient-primary: linear-gradient(135deg, hsl(221 61% 65%), hsl(240 61% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(240 61% 75%), hsl(221 61% 65%));
-    --gradient-accent: linear-gradient(90deg, hsl(48 96% 53%), hsl(45 100% 51%));
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 63%), hsl(262 83% 68%));
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 68%), hsl(221 83% 63%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 46%), hsl(158 64% 62%));
     --gradient-warning: linear-gradient(135deg, hsl(25 95% 63%), hsl(43 96% 66%));
     --gradient-destructive: linear-gradient(135deg, hsl(0 84% 70%), hsl(0 72% 61%));
     --gradient-card: linear-gradient(135deg, hsl(224 64% 6%), hsl(215 25% 12%));
-    --gradient-hero: linear-gradient(135deg, hsl(221 61% 65% / 0.1), hsl(240 61% 75% / 0.1));
+    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53% / 0.2), hsl(262 83% 58% / 0.2));
     
     /* Dark shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 20px hsl(221 61% 65% / 0.4);
-    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
-    --shadow-elevated: 0 10px 25px -5px hsl(221 61% 65% / 0.3), 0 8px 10px -6px hsl(221 61% 65% / 0.2);
+    --shadow-glow: 0 0 20px hsl(221 83% 63% / 0.4);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
