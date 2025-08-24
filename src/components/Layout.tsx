@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Star, Search, BarChart3, User, LogOut } from "lucide-react";
 
 interface LayoutProps {
@@ -26,28 +27,44 @@ export const Layout = ({ children, showNavigation = true }: LayoutProps) => {
             <div className="flex h-16 items-center justify-between">
               {/* Logo */}
               <Link to="/" className="flex items-center space-x-2">
-                <span className="text-3xl font-bold gradient-text">GeoRankers</span>
+                <span className="text-2xl md:text-3xl font-bold gradient-text">GeoRankers</span>
               </Link>
 
               {/* Action Buttons */}
               <div className="flex items-center space-x-3">
                 {user ? (
                   <>
-                    <div className="flex items-center space-x-2">
+                    {/* Desktop Profile */}
+                    <div className="hidden md:flex items-center space-x-2">
                       <User className="w-4 h-4" />
                       <span className="text-sm text-muted-foreground">
                         Welcome, {user.name}
                       </span>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={handleLogout}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </Button>
+                    
+                    {/* Profile Dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+                          <div className="w-8 h-8 rounded-full bg-gradient-hero flex items-center justify-center text-white font-semibold text-sm">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuItem className="flex items-center space-x-2 md:hidden">
+                          <User className="w-4 h-4" />
+                          <span>{user.name}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={handleLogout}
+                          className="flex items-center space-x-2 text-destructive focus:text-destructive"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </>
                 ) : location.pathname === '/login' ? (
                   <Link to="/register">

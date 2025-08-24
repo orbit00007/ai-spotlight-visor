@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/Layout";
 import { InsightCards } from "@/components/results/InsightCards";
 import { RecommendedActions } from "@/components/results/RecommendedActions";
-import { Drilldowns } from "@/components/results/Drilldowns";
+import { Drilldowns } from "@/components/results/drilldowns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
