@@ -1,324 +1,341 @@
 import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Check, X, ChevronDown, Filter, Search, Globe, Grid } from "lucide-react";
-import { MobileFilterDropdown } from "./mobile-filter-dropdown";
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  CheckCircle, 
+  XCircle,
+  Filter,
+  Globe
+} from "lucide-react";
 
 interface DrilldownsProps {
-  drilldowns: any;
-  activeFilter?: string;
+  data: {
+    query_explorer: Array<{
+      query_id: string;
+      query: string;
+      providers: string[];
+      brand_present: boolean;
+      top_answers: Array<{
+        name: string;
+        best_rank: number;
+        description: string;
+        price?: string;
+        features?: string | string[];
+        sources?: string[];
+      }>;
+      sources_count: number;
+    }>;
+    sources_detail: Array<{
+      domain: string;
+      count: number;
+      percent: number;
+      queries: string[];
+    }>;
+    attributes_matrix: {
+      columns: string[];
+      rows: Array<{
+        attribute: string;
+        values: boolean[];
+      }>;
+    };
+  };
 }
 
-export function Drilldowns({ drilldowns, activeFilter }: DrilldownsProps) {
-  const [selectedQuery, setSelectedQuery] = useState<string | null>(null);
-  const [brandFilter, setBrandFilter] = useState<"all" | "yes" | "no">("all");
-  const [expandedSources, setExpandedSources] = useState<string[]>([]);
+export const Drilldowns = ({ data }: DrilldownsProps) => {
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState<"all" | "yes" | "no">("all");
+  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
 
-  const toggleSource = (domain: string) => {
-    setExpandedSources(prev => 
-      prev.includes(domain)
-        ? prev.filter(d => d !== domain)
-        : [...prev, domain]
-    );
+  const toggleRowExpansion = (queryId: string) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [queryId]: !prev[queryId]
+    }));
   };
 
-  const filteredQueries = drilldowns.query_explorer.filter((query: any) => {
-    if (brandFilter === "yes") return query.brand_present;
-    if (brandFilter === "no") return !query.brand_present;
+  const toggleSourceExpansion = (domain: string) => {
+    setExpandedSources(prev => ({
+      ...prev,
+      [domain]: !prev[domain]
+    }));
+  };
+
+  const filteredQueries = data.query_explorer.filter(query => {
+    if (filter === "yes") return query.brand_present;
+    if (filter === "no") return !query.brand_present;
     return true;
   });
 
   return (
-    <Tabs defaultValue="query-explorer" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="query-explorer" className="flex items-center space-x-2">
-          <Search className="h-4 w-4" />
-          <span>Query Explorer</span>
-        </TabsTrigger>
-        <TabsTrigger value="sources" className="flex items-center space-x-2">
-          <Globe className="h-4 w-4" />
-          <span>Sources</span>
-        </TabsTrigger>
-        <TabsTrigger value="attributes" className="flex items-center space-x-2">
-          <Grid className="h-4 w-4" />
-          <span>Attributes Matrix</span>
-        </TabsTrigger>
-      </TabsList>
+    <Card className="card-gradient border-0">
+      <CardHeader>
+        <CardTitle className="text-xl">Evidence & Transparency</CardTitle>
+        <CardDescription>
+          Detailed analysis and supporting data for all insights
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="queries" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="queries" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Query Explorer</span>
+              <span className="sm:hidden">Queries</span>
+            </TabsTrigger>
+            <TabsTrigger value="sources" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Sources Detail</span>
+              <span className="sm:hidden">Sources</span>
+            </TabsTrigger>
+            <TabsTrigger value="attributes" className="text-xs sm:text-sm px-2 py-2">
+              <span className="hidden sm:inline">Attributes Matrix</span>
+              <span className="sm:hidden">Matrix</span>
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Query Explorer */}
-      <TabsContent value="query-explorer" className="space-y-4">
-        <Card className="bg-gradient-card border-0 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <Search className="h-4 w-4 text-white" />
+          {/* Query Explorer Tab */}
+          <TabsContent value="queries" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h4 className="font-semibold">Query Analysis</h4>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex items-center space-x-2">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground hidden sm:inline">Filter:</span>
                 </div>
-                <span>Query Explorer</span>
-              </CardTitle>
-              
-              {/* Desktop Filters */}
-              <div className="hidden md:flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Filter className="h-4 w-4" />
-                  <span>Filter:</span>
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    variant={filter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilter("all")}
+                    className="text-xs px-2 py-1"
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant={filter === "yes" ? "success" : "outline"}
+                    size="sm"
+                    onClick={() => setFilter("yes")}
+                    className="text-xs px-2 py-1"
+                  >
+                    <span className="hidden sm:inline">Brand Present</span>
+                    <span className="sm:hidden">Present</span>
+                  </Button>
+                  <Button
+                    variant={filter === "no" ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={() => setFilter("no")}
+                    className="text-xs px-2 py-1"
+                  >
+                    <span className="hidden sm:inline">Not Present</span>
+                    <span className="sm:hidden">Not Present</span>
+                  </Button>
                 </div>
-                <div className="flex space-x-1">
-                  {["all", "yes", "no"].map((filter) => (
-                    <Button
-                      key={filter}
-                      variant={brandFilter === filter ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setBrandFilter(filter as any)}
-                      className="transition-all"
-                    >
-                      {filter === "all" ? "All" : filter === "yes" ? "Brand Present" : "Brand Absent"}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mobile Filter Dropdown */}
-              <div className="md:hidden">
-                <MobileFilterDropdown 
-                  currentFilter={brandFilter}
-                  onFilterChange={setBrandFilter}
-                />
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {filteredQueries.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Select a query to see details.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Query</TableHead>
-                    <TableHead>Providers</TableHead>
-                    <TableHead>Brand Present</TableHead>
-                    <TableHead>Top Answers</TableHead>
-                    <TableHead>Sources</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredQueries.map((query: any) => (
-                    <TableRow key={query.query_id}>
-                      <TableCell>
-                        <Button
-                          variant="link"
-                          className="h-auto p-0 text-left whitespace-normal"
-                          onClick={() => setSelectedQuery(
-                            selectedQuery === query.query_id ? null : query.query_id
-                          )}
-                        >
-                          {query.query}
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {query.providers.map((provider: string) => (
-                            <Badge key={provider} variant="outline" className="text-xs">
-                              {provider}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={query.brand_present ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}>
-                          {query.brand_present ? "Yes" : "No"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {query.top_answers.slice(0, 3).map((answer: any, index: number) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              #{answer.best_rank} {answer.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>{query.sources_count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
 
-            {/* Query Details */}
-            {selectedQuery && (
-              <div className="mt-6 border-t pt-6">
-                {filteredQueries
-                  .filter((q: any) => q.query_id === selectedQuery)
-                  .map((query: any) => (
-                    <div key={query.query_id} className="space-y-4">
-                      <h4 className="font-semibold">Query: {query.query}</h4>
-                      <div className="space-y-3">
-                        {query.top_answers.map((answer: any, index: number) => (
-                          <Card key={index} className="border">
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <h5 className="font-medium">#{answer.best_rank} {answer.name}</h5>
-                                {answer.price && (
-                                  <Badge variant="outline">{answer.price}</Badge>
+            <div className="space-y-2">
+              {filteredQueries.map((query) => (
+                <div key={query.query_id} className="border rounded-lg">
+                  <div 
+                    className="p-4 hover:bg-accent cursor-pointer transition-smooth"
+                    onClick={() => toggleRowExpansion(query.query_id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <span className="font-medium">{query.query}</span>
+                          {query.brand_present ? (
+                            <CheckCircle className="w-4 h-4 text-success" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-destructive" />
+                          )}
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+                          <div className="flex flex-wrap gap-1">
+                            {query.providers.map((provider, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {provider}
+                              </Badge>
+                            ))}
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {query.sources_count} sources
+                          </span>
+                        </div>
+                      </div>
+                      {expandedRows[query.query_id] ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </div>
+                  </div>
+
+                  {expandedRows[query.query_id] && (
+                    <div className="px-4 pb-4 border-t bg-muted/20">
+                      <div className="space-y-3 pt-3">
+                        {query.top_answers.map((answer, idx) => (
+                          <div key={idx} className="p-3 rounded border bg-background">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline">#{answer.best_rank}</Badge>
+                                  <span className="font-medium">{answer.name}</span>
+                                  {answer.price && (
+                                    <Badge variant="secondary">{answer.price}</Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
+                                  {answer.description}
+                                </p>
+                                {answer.features && (
+                                  <div className="mt-2">
+                                    <div className="flex flex-wrap gap-1">
+                                      {(Array.isArray(answer.features) ? answer.features : [answer.features]).slice(0, 5).map((feature, featureIdx) => (
+                                        <Badge key={featureIdx} variant="outline" className="text-xs">
+                                          {feature}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground mb-3">
-                                {answer.description}
-                              </p>
-                              {answer.features && (
-                                <div className="space-y-2">
-                                  <p className="text-xs font-medium">Features:</p>
+                            </div>
+                            {answer.sources && answer.sources.length > 0 && (
+                              <div className="mt-2 pt-2 border-t">
+                                <div className="flex items-center space-x-2">
+                                  <Globe className="w-3 h-3 text-muted-foreground" />
                                   <div className="flex flex-wrap gap-1">
-                                    {answer.features.map((feature: string, i: number) => (
-                                      <Badge key={i} variant="secondary" className="text-xs">
-                                        {feature}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {answer.sources && (
-                                <div className="mt-3">
-                                  <p className="text-xs font-medium mb-1">Sources:</p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {answer.sources.map((source: string, i: number) => (
-                                      <Badge key={i} variant="outline" className="text-xs">
+                                    {answer.sources.slice(0, 3).map((source, sourceIdx) => (
+                                      <Badge key={sourceIdx} variant="outline" className="text-xs">
                                         {source}
                                       </Badge>
                                     ))}
+                                    {answer.sources.length > 3 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{answer.sources.length - 3} more
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
-                              )}
-                            </CardContent>
-                          </Card>
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
-                  ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
+                  )}
+                </div>
+              ))}
 
-      {/* Sources Detail */}
-      <TabsContent value="sources" className="space-y-4">
-        <Card className="bg-gradient-card border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-secondary rounded-lg flex items-center justify-center">
-                <Globe className="h-4 w-4 text-white" />
-              </div>
-              <span>Sources Detail</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {drilldowns.sources_detail.map((source: any) => (
-                <Collapsible key={source.domain}>
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="font-medium">{source.domain}</div>
-                      <Badge variant="outline">{source.count} citations</Badge>
-                      <span className="text-sm text-muted-foreground">{source.percent}%</span>
+              {filteredQueries.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Select a query to see details.
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Sources Detail Tab */}
+          <TabsContent value="sources" className="space-y-4">
+            <h4 className="font-semibold">Source Influence Rankings</h4>
+            <div className="space-y-2">
+              {data.sources_detail.map((source, index) => (
+                <Collapsible
+                  key={index}
+                  open={expandedSources[source.domain]}
+                  onOpenChange={() => toggleSourceExpansion(source.domain)}
+                >
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between p-3 border rounded hover:bg-accent transition-smooth">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-medium">{source.domain}</span>
+                        <Badge variant="outline">{source.count}</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {source.percent}%
+                        </span>
+                      </div>
+                      {expandedSources[source.domain] ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
                     </div>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleSource(source.domain)}
-                      >
-                        Show queries
-                        <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${
-                          expandedSources.includes(source.domain) ? 'rotate-180' : ''
-                        }`} />
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
+                  </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="mt-2 ml-4 space-y-1">
-                      {source.queries?.map((query: string, index: number) => (
-                        <div key={index} className="text-sm text-muted-foreground">
-                          • {query}
-                        </div>
-                      ))}
+                    <div className="px-3 pb-3">
+                      <Separator className="mb-3" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Appears in these queries:
+                        </p>
+                        {source.queries.map((query, queryIdx) => (
+                          <p key={queryIdx} className="text-sm pl-2 border-l-2 border-muted">
+                            {query}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
+          </TabsContent>
 
-      {/* Attributes Matrix */}
-      <TabsContent value="attributes" className="space-y-4">
-        <Card className="bg-gradient-card border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-accent rounded-lg flex items-center justify-center">
-                <Grid className="h-4 w-4 text-white" />
-              </div>
-              <span>Attributes Matrix</span>
-            </CardTitle>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <Check className="h-4 w-4 text-success" />
-                <span>Attribute cited for this brand in AI answers</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <X className="h-4 w-4 text-destructive" />
-                <span>Not cited</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 bg-background">Attribute</TableHead>
-                    {drilldowns.attributes_matrix.columns.map((column: string) => (
-                      <TableHead key={column} className="text-center min-w-[120px]">
-                        {column}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {drilldowns.attributes_matrix.rows.map((row: any) => (
-                    <TableRow key={row.attribute}>
-                      <TableCell className="sticky left-0 bg-background font-medium">
-                        {row.attribute}
-                      </TableCell>
-                      {row.values.map((value: boolean, index: number) => (
-                        <TableCell key={index} className="text-center">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center mx-auto ${
-                            value ? 'bg-success text-success-foreground' : 'bg-destructive text-destructive-foreground'
-                          }`}>
+          {/* Attributes Matrix Tab */}
+          <TabsContent value="attributes" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <h4 className="font-semibold">Attributes Comparison</h4>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle className="w-4 h-4 text-success" />
+                      <span className="text-xs sm:text-sm">Attribute cited for brand</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <XCircle className="w-4 h-4 text-destructive" />
+                      <span className="text-xs sm:text-sm">Not cited</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <div className="min-w-full border rounded-lg">
+                    {/* Header Row */}
+                    <div className="flex border-b bg-muted/50">
+                      <div className="min-w-32 sm:w-48 p-2 sm:p-3 font-medium text-xs sm:text-sm">Attribute</div>
+                      {data.attributes_matrix.columns.map((column, idx) => (
+                        <div key={idx} className="min-w-16 sm:w-24 p-2 sm:p-3 text-center font-medium border-l text-xs sm:text-sm">
+                          {column}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Data Rows */}
+                    {data.attributes_matrix.rows.map((row, rowIdx) => (
+                      <div key={rowIdx} className="flex border-b hover:bg-accent/30">
+                        <div className="min-w-32 sm:w-48 p-2 sm:p-3 text-xs sm:text-sm">{row.attribute}</div>
+                        {row.values.map((value, colIdx) => (
+                          <div key={colIdx} className="min-w-16 sm:w-24 p-2 sm:p-3 text-center border-l">
                             {value ? (
-                              <Check className="h-4 w-4" />
+                              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-success mx-auto" />
                             ) : (
-                              <X className="h-4 w-4" />
+                              <XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-destructive mx-auto" />
                             )}
                           </div>
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
             </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
-}
+};

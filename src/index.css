@@ -2,147 +2,141 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AI Search Visibility Checker Design System */
+/* GeoRankers AI Search Visibility Tool Design System
+All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
+*/
 
 @layer base {
   :root {
-    /* Modern AI tool color palette */
+    /* Base colors - clean whites and grays */
     --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
-    
+    --foreground: 224 15% 15%;
+
+    /* Card system */
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
-    
+    --card-foreground: 224 15% 15%;
+
+    /* Popover system */
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
-    
-    /* Primary: Modern blue for AI tools */
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 98%;
-    --primary-hover: 221 83% 45%;
-    
-    /* Secondary: Neutral gray */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 46%;
-    
-    /* Muted backgrounds */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    
-    /* Accent: Purple for highlights */
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 98%;
-    
-    /* Status colors */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --popover-foreground: 224 15% 15%;
+
+    /* Primary - GeoRankers blue theme */
+    --primary: 210 100% 63%; /* Bright blue from GeoRankers */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 100% 68%;
+
+    /* Secondary - light blue variations */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 100% 45%;
+
+    /* Muted system */
+    --muted: 210 25% 95%;
+    --muted-foreground: 210 10% 50%;
+
+    /* Accent - complementary highlights */
+    --accent: 210 25% 95%;
+    --accent-foreground: 210 100% 45%;
+
+    /* Success and error states */
     --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --warning: 48 96% 53%;
-    --warning-foreground: 0 0% 98%;
-    
-    /* UI elements */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(262 83% 58%));
-    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%), hsl(221 83% 53%));
-    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(158 64% 52%));
-    --gradient-warning: linear-gradient(135deg, hsl(25 95% 53%), hsl(43 96% 56%));
-    --gradient-destructive: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 72% 51%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 99%));
-    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53% / 0.1), hsl(262 83% 58% / 0.1));
-    
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 20px hsl(221 83% 53% / 0.3);
-    
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border and input system */
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 210 100% 63%;
+
+    /* Yellow accent for highlights */
+    --warning: 45 93% 58%;
+    --warning-foreground: 0 0% 0%;
+
+    /* Design tokens */
     --radius: 0.75rem;
 
+    /* Gradients - Beautiful blue gradients matching GeoRankers */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 63%) 0%, hsl(220 100% 68%) 50%, hsl(240 100% 73%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(210 25% 97%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-bg: linear-gradient(180deg, hsl(210 25% 98%) 0%, hsl(0 0% 100%) 100%);
+
+    /* Shadows with brand colors */
+    --shadow-card: 0 4px 20px -4px hsl(210 100% 63% / 0.1);
+    --shadow-elevated: 0 10px 40px -8px hsl(210 100% 63% / 0.15);
+    --shadow-glow: 0 0 30px hsl(210 100% 68% / 0.3);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Sidebar system for navigation */
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 210 15% 25%;
+    --sidebar-primary: 210 100% 63%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 25% 95%;
+    --sidebar-accent-foreground: 210 100% 45%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 210 100% 63%;
   }
 
   .dark {
-    /* Dark mode: Deep blue-black backgrounds */
-    --background: 224 71% 4%;
-    --foreground: 0 0% 98%;
-    
-    --card: 224 64% 6%;
-    --card-foreground: 0 0% 98%;
-    
-    --popover: 224 64% 6%;
-    --popover-foreground: 0 0% 98%;
-    
-    /* Primary: Bright blue in dark mode */
-    --primary: 221 83% 63%;
-    --primary-foreground: 224 71% 4%;
-    --primary-hover: 221 83% 55%;
-    
-    /* Secondary: Dark gray */
-    --secondary: 215 25% 15%;
-    --secondary-foreground: 0 0% 85%;
-    
-    /* Muted backgrounds */
-    --muted: 215 25% 15%;
-    --muted-foreground: 217 10% 64%;
-    
-    /* Accent: Brighter purple in dark */
-    --accent: 262 83% 68%;
-    --accent-foreground: 224 71% 4%;
-    
-    /* Status colors - adjusted for dark mode */
-    --success: 142 76% 46%;
-    --success-foreground: 224 71% 4%;
-    --warning: 48 96% 63%;
-    --warning-foreground: 224 71% 4%;
-    --destructive: 0 84% 70%;
-    --destructive-foreground: 224 71% 4%;
-    
-    /* UI elements */
-    --border: 215 25% 20%;
-    --input: 215 25% 20%;
-    --ring: 221 83% 63%;
-    
-    /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 63%), hsl(262 83% 68%));
-    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 68%), hsl(221 83% 63%));
-    --gradient-accent: linear-gradient(135deg, hsl(142 76% 46%), hsl(158 64% 62%));
-    --gradient-warning: linear-gradient(135deg, hsl(25 95% 63%), hsl(43 96% 66%));
-    --gradient-destructive: linear-gradient(135deg, hsl(0 84% 70%), hsl(0 72% 61%));
-    --gradient-card: linear-gradient(135deg, hsl(224 64% 6%), hsl(215 25% 12%));
-    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53% / 0.2), hsl(262 83% 58% / 0.2));
-    
+    /* Dark mode with blue accents */
+    --background: 224 20% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 224 20% 10%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 224 20% 10%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 210 100% 68%;
+    --primary-foreground: 224 20% 8%;
+    --primary-glow: 210 100% 73%;
+
+    --secondary: 224 20% 15%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 224 20% 15%;
+    --muted-foreground: 210 10% 65%;
+
+    --accent: 224 20% 15%;
+    --accent-foreground: 210 20% 95%;
+
+    --success: 142 76% 40%;
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 224 20% 18%;
+    --input: 224 20% 18%;
+    --ring: 210 100% 68%;
+
+    --warning: 45 93% 62%;
+    --warning-foreground: 0 0% 0%;
+
+    /* Dark gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 68%) 0%, hsl(220 100% 73%) 50%, hsl(240 100% 78%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(224 20% 12%) 0%, hsl(224 20% 10%) 100%);
+    --gradient-bg: linear-gradient(180deg, hsl(224 20% 8%) 0%, hsl(224 20% 6%) 100%);
+
     /* Dark shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 20px hsl(221 83% 63% / 0.4);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-elevated: 0 10px 40px -8px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 30px hsl(210 100% 68% / 0.2);
+
+    /* Dark sidebar */
+    --sidebar-background: 224 20% 6%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 210 100% 68%;
+    --sidebar-primary-foreground: 224 20% 8%;
+    --sidebar-accent: 224 20% 12%;
+    --sidebar-accent-foreground: 210 20% 85%;
+    --sidebar-border: 224 20% 15%;
+    --sidebar-ring: 210 100% 68%;
   }
 }
 
@@ -152,6 +146,32 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    background: hsl(var(--gradient-bg));
+  }
+
+  /* Custom component classes */
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-gradient {
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .hero-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .transition-bounce {
+    transition: var(--transition-bounce);
   }
 }
