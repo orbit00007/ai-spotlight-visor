@@ -45,8 +45,8 @@ export const Layout = ({ children, showNavigation = true }: LayoutProps) => {
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                          <div className="w-8 h-8 rounded-full bg-gradient-hero flex items-center justify-center text-white font-semibold text-sm">
+                        <Button variant="ghost" size="sm" className="relative h-10 w-10 rounded-full p-0">
+                          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
                             {user.name.charAt(0).toUpperCase()}
                           </div>
                         </Button>

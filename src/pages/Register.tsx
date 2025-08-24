@@ -51,24 +51,25 @@ export default function Register() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-20">
-        <div className="max-w-md mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-hero hero-glow">
-                <Search className="w-8 h-8 text-white" />
+      <div className="min-h-screen bg-gray-100">
+        <div className="container mx-auto px-4 py-20">
+          <div className="max-w-md mx-auto">
+            {/* Hero Section */}
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-6">
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 shadow-lg">
+                  <Search className="w-8 h-8 text-white" />
+                </div>
               </div>
+              <h1 className="text-3xl font-bold mb-2 text-blue-600">Get Started</h1>
+              <p className="text-gray-600">Create your account to track AI search visibility</p>
             </div>
-            <h1 className="text-3xl font-bold mb-2">Get Started</h1>
-            <p className="text-muted-foreground">Create your account to track AI search visibility</p>
-          </div>
 
-          {/* Registration Form */}
-          <Card className="card-gradient border-0">
+            {/* Registration Form */}
+            <Card className="bg-white border shadow-lg">
             <CardHeader className="text-center pb-4">
-              <CardTitle>Create Account</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900">Create Account</CardTitle>
+              <CardDescription className="text-gray-600">
                 Join thousands of brands optimizing for AI search
               </CardDescription>
             </CardHeader>
@@ -77,14 +78,14 @@ export default function Register() {
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="name"
                       type="text"
                       placeholder="John Doe"
                       value={formData.name}
                       onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="pl-10"
+                      className="pl-10 bg-white"
                       required
                     />
                   </div>
@@ -93,14 +94,14 @@ export default function Register() {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="john@company.com"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="pl-10"
+                      className="pl-10 bg-white"
                       required
                     />
                   </div>
@@ -109,14 +110,14 @@ export default function Register() {
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a strong password"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 bg-white"
                       required
                     />
                     <Button
@@ -134,14 +135,14 @@ export default function Register() {
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="confirmPassword"
                       type="password"
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      className="pl-10"
+                      className="pl-10 bg-white"
                       required
                     />
                   </div>
@@ -159,14 +160,15 @@ export default function Register() {
               </form>
             </CardContent>
             <CardFooter className="justify-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link to="/login" className="text-primary hover:underline font-medium">
+                <Link to="/login" className="text-blue-600 hover:underline font-medium">
                   Sign in here
                 </Link>
               </p>
             </CardFooter>
           </Card>
+          </div>
         </div>
       </div>
     </Layout>
