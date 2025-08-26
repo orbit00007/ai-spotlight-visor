@@ -7,16 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, X, Plus, Search, Building2, Tags, ExternalLink, Grid3X3, Grid2X2 } from "lucide-react";
+import { Loader2, X, Plus, Search, Globe, Tags, ExternalLink, AlertCircle } from "lucide-react";
+import validator from "validator";
 
 export default function InputPage() {
-  const [brand, setBrand] = useState("");
+  const [website, setWebsite] = useState("");
   const [currentKeyword, setCurrentKeyword] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [cardCount, setCardCount] = useState<"4" | "5">("4");
   const [isLoading, setIsLoading] = useState(false);
+  const [urlError, setUrlError] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -27,10 +27,26 @@ export default function InputPage() {
     }
   }, [user, navigate]);
 
+  const validateUrl = (url: string) => {
+    setUrlError("");
+    if (!url.trim()) return false;
+    
+    let processedUrl = url.trim();
+    if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+      processedUrl = `https://${processedUrl}`;
+    }
+    
+    if (!validator.isURL(processedUrl, { require_protocol: true })) {
+      setUrlError("Please enter a valid website URL");
+      return false;
+    }
+    return true;
+  };
+
   const addKeyword = () => {
     if (
       currentKeyword.trim() &&
-      keywords.length < 3 &&
+      keywords.length < 5 &&
       !keywords.includes(currentKeyword.trim())
     ) {
       setKeywords([...keywords, currentKeyword.trim()]);
@@ -52,10 +68,10 @@ export default function InputPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!brand.trim()) {
+    if (!validateUrl(website)) {
       toast({
-        title: "Brand required",
-        description: "Please enter your brand or website name.",
+        title: "Invalid website URL",
+        description: "Please enter a valid website URL to analyze.",
         variant: "destructive",
       });
       return;
@@ -64,7 +80,7 @@ export default function InputPage() {
     if (keywords.length === 0) {
       toast({
         title: "Keywords required",
-        description: "Please add at least one keyword.",
+        description: "Please add at least one keyword for analysis.",
         variant: "destructive",
       });
       return;
@@ -72,24 +88,23 @@ export default function InputPage() {
 
     setIsLoading(true);
 
+    // Simulate DNS check and analysis
     setTimeout(() => {
       setIsLoading(false);
       navigate("/results", {
         state: {
-          brand: brand.trim(),
+          website: website.trim(),
           keywords,
-          cardCount,
         },
       });
-    }, 2000);
+    }, 3000);
   };
 
   const showExampleOutput = () => {
     navigate("/results", {
       state: {
-        brand: "Kommunicate",
+        website: "kommunicate.io",
         keywords: ["customer support", "live chat", "chatbot"],
-        cardCount: "5",
         isExample: true,
       },
     });
@@ -104,56 +119,65 @@ export default function InputPage() {
             {/* Hero Section */}
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-bold text-blue-600">
-                Check your AI search visibility
+                Discover Your AI Search Visibility
               </h1>
               <p className="text-xl text-gray-600">
-                Enter your brand and up to 3 keywords to see how AI assistants mention you.
+                Enter your website and keywords to see how AI assistants respond to searches in your space.
               </p>
             </div>
 
             {/* Form Card */}
             <Card className="text-left bg-white border shadow-lg">
               <CardHeader>
-                <CardTitle className="text-gray-900 text-center">Brand Visibility Analysis</CardTitle>
+                <CardTitle className="text-gray-900 text-center">AI Search Visibility Check</CardTitle>
                 <CardDescription className="text-gray-600 text-center">
-                  Get insights into how AI assistants present your brand in search results
+                  Analyze how AI assistants respond to searches related to your website
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Brand Field */}
+                  {/* Website Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="brand">Brand or Website</Label>
+                    <Label htmlFor="website">Website URL</Label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
-                        id="brand"
+                        id="website"
                         type="text"
-                        placeholder="e.g., Kommunicate or kommunicate.io"
-                        value={brand}
-                        onChange={(e) => setBrand(e.target.value)}
+                        placeholder="e.g., yourwebsite.com or https://yourwebsite.com"
+                        value={website}
+                        onChange={(e) => {
+                          setWebsite(e.target.value);
+                          setUrlError("");
+                        }}
                         maxLength={100}
-                        className="pl-11 bg-white"
+                        className={`pl-11 bg-white ${urlError ? 'border-red-500' : ''}`}
                       />
                     </div>
-                    <p className="text-sm text-gray-500">{brand.length}/100 characters</p>
+                    {urlError && (
+                      <p className="text-sm text-red-500 flex items-center">
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        {urlError}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-500">{website.length}/100 characters</p>
                   </div>
 
                   {/* Keywords Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="keywords">Keywords (up to 3)</Label>
+                    <Label htmlFor="keywords">Search Keywords (up to 5)</Label>
                     <div className="space-y-3">
                       <div className="flex gap-2 relative">
                         <Tags className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
                           id="keywords"
                           type="text"
-                          placeholder="Press Enter to add"
+                          placeholder="e.g., customer support software"
                           value={currentKeyword}
                           onChange={(e) => setCurrentKeyword(e.target.value)}
                           onKeyPress={handleKeyPress}
                           maxLength={60}
-                          disabled={keywords.length >= 3}
+                          disabled={keywords.length >= 5}
                           className="pl-11 bg-white"
                         />
                         <Button
@@ -163,7 +187,7 @@ export default function InputPage() {
                           onClick={addKeyword}
                           disabled={
                             !currentKeyword.trim() ||
-                            keywords.length >= 3 ||
+                            keywords.length >= 5 ||
                             keywords.includes(currentKeyword.trim())
                           }
                         >
@@ -196,35 +220,9 @@ export default function InputPage() {
                       )}
 
                       <p className="text-sm text-gray-500">
-                        {keywords.length} of 3 keywords added
+                        {keywords.length} of 5 keywords added
                       </p>
                     </div>
-                  </div>
-
-                  {/* Card Count Selection */}
-                  <div className="space-y-3">
-                    <Label>Number of Insight Cards</Label>
-                    <RadioGroup value={cardCount} onValueChange={(value: "4" | "5") => setCardCount(value)}>
-                      <div className="flex items-center space-x-6">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="4" id="cards-4" />
-                          <Label htmlFor="cards-4" className="flex items-center space-x-2 cursor-pointer">
-                            <Grid2X2 className="w-4 h-4" />
-                            <span>4 Cards</span>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="5" id="cards-5" />
-                          <Label htmlFor="cards-5" className="flex items-center space-x-2 cursor-pointer">
-                            <Grid3X3 className="w-4 h-4" />
-                            <span>5 Cards</span>
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                    <p className="text-sm text-gray-500">
-                      Choose the number of insight cards to display in your results
-                    </p>
                   </div>
 
                   {/* Submit Button */}
@@ -232,20 +230,20 @@ export default function InputPage() {
                     type="submit"
                     variant="hero"
                     className="w-full"
-                    disabled={isLoading || !brand.trim() || keywords.length === 0}
+                    disabled={isLoading || !website.trim() || keywords.length === 0 || !!urlError}
                     size="lg"
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing visibility...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        Run visibility check
-                      </>
-                    )}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking DNS & analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="mr-2 h-4 w-4" />
+                          Start AI Visibility Analysis
+                        </>
+                      )}
                   </Button>
 
                   {/* Example Link */}
@@ -262,13 +260,12 @@ export default function InputPage() {
                   </div>
                 </form>
                 <div className="mt-6 p-6 rounded-lg bg-muted/50 border">
-                  <h4 className="font-semibold mb-3">Analysis Output</h4>
+                  <h4 className="font-semibold mb-3">What You'll Get</h4>
                   <div className="text-sm text-muted-foreground space-y-2">
-                    <p>• <strong>AI Share of Answers:</strong> Your brand appears in 23 of 100 queries (23%)</p>
-                    <p>• <strong>Competitor Analysis:</strong> Top 5 competitors and their mention frequency</p>
-                    <p>• <strong>Source Influence:</strong> Which websites shape AI responses about your industry</p>
-                    <p>• <strong>Narrative Gaps:</strong> Features competitors get credited for that you don't</p>
-                    <p>• <strong>Recommended Actions:</strong> Specific steps to improve AI visibility</p>
+                    <p>• <strong>AI Platform Breakdown:</strong> See your visibility on ChatGPT, Perplexity, and other AI platforms</p>
+                    <p>• <strong>Keyword-by-Keyword Analysis:</strong> Click through each keyword to see detailed insights</p>
+                    <p>• <strong>Competitor Comparison:</strong> See who dominates AI responses in your space</p>
+                    <p>• <strong>Action Steps:</strong> Clear recommendations to improve your AI search presence</p>
                   </div>
                 </div>
               </CardContent>

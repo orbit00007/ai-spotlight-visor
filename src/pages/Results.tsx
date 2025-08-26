@@ -2,26 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/Layout";
-import { InsightCards } from "@/components/results/InsightCards";
-import { RecommendedActions } from "@/components/results/RecommendedActions";
-import { Drilldowns } from "@/components/results/drilldowns";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { mockInsightsData } from "@/data/mockInsights";
-import { ArrowLeft, Calendar, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Calendar, Search, Globe, TrendingUp, Users, ExternalLink } from "lucide-react";
+import { createKeywordInsights } from "@/data/keywordInsights";
 
 interface ResultsData {
-  brand: string;
+  website: string;
   keywords: string[];
-  cardCount: "4" | "5";
   isExample?: boolean;
 }
 
 export default function Results() {
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
-  const [currentTab, setCurrentTab] = useState("queries");
+  const [selectedKeyword, setSelectedKeyword] = useState<string>("");
+  const [insights, setInsights] = useState<any>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,24 +34,32 @@ export default function Results() {
     if (location.state) {
       const data = location.state as ResultsData;
       setResultsData(data);
+      
+      // Generate insights for keywords
+      const keywordInsights = createKeywordInsights(data.website, data.keywords);
+      setInsights(keywordInsights);
+      
+      // Set first keyword as selected by default
+      setSelectedKeyword(data.keywords[0] || "");
     } else {
       navigate("/input");
     }
   }, [user, navigate, location.state]);
 
-  const handleViewQueries = () => setCurrentTab("queries");
-  const handleViewSources = () => setCurrentTab("sources");
-  const handleViewAttributes = () => setCurrentTab("attributes");
+  const getCurrentKeywordData = () => {
+    if (!insights || !selectedKeyword) return null;
+    return insights.keywords.find((kw: any) => kw.keyword === selectedKeyword);
+  };
 
-  if (!resultsData) {
+  if (!resultsData || !insights) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20">
           <div className="flex items-center justify-center min-h-64">
             <div className="text-center">
               <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Loading Analysis...</h2>
-              <p className="text-muted-foreground">Please wait while we prepare your results.</p>
+              <h2 className="text-2xl font-bold mb-2">Analyzing Your AI Visibility...</h2>
+              <p className="text-muted-foreground">Processing your website and keywords across AI platforms.</p>
             </div>
           </div>
         </div>
@@ -71,49 +77,63 @@ export default function Results() {
     });
   };
 
+  const currentKeywordData = getCurrentKeywordData();
+
   return (
     <Layout>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-4">
+        <div className="sticky top-16 z-40 bg-white border-b shadow-sm">
+          <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col space-y-4">
-              {/* Brand Info */}
+              {/* Website Info */}
               <div className="flex items-center space-x-3">
-                {/* Brand Avatar */}
-                <div className="w-10 h-10 rounded-lg bg-gradient-hero flex items-center justify-center text-white font-bold">
-                  {resultsData.brand.charAt(0).toUpperCase()}
+                <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                  <Globe className="w-6 h-6" />
                 </div>
                 <div>
-                  <h1 className="font-semibold text-lg">{resultsData.brand}</h1>
-                  <p className="text-sm text-muted-foreground">
-                    These insights come directly from AI answers.
+                  <h1 className="font-bold text-xl text-gray-900">{resultsData.website}</h1>
+                  <p className="text-sm text-gray-600">
+                    AI Search Visibility Analysis across {insights.overall.total_queries} queries
                   </p>
                 </div>
               </div>
               
-              {/* Keywords and Stats Row */}
+              {/* Keywords Navigation */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                {/* Keywords */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {resultsData.keywords.map((keyword, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
+                  <span className="text-sm font-medium text-gray-700 mr-2">Keywords:</span>
+                  {resultsData.keywords.map((keyword) => (
+                    <Badge
+                      key={keyword}
+                      variant={selectedKeyword === keyword ? "default" : "outline"}
+                      className={`cursor-pointer transition-all ${
+                        selectedKeyword === keyword 
+                          ? "bg-blue-600 text-white" 
+                          : "hover:bg-blue-50 border-blue-200"
+                      }`}
+                      onClick={() => setSelectedKeyword(keyword)}
+                    >
                       {keyword}
                     </Badge>
                   ))}
+                  <Badge
+                    variant={selectedKeyword === "overall" ? "default" : "outline"}
+                    className={`cursor-pointer transition-all ${
+                      selectedKeyword === "overall" 
+                        ? "bg-green-600 text-white" 
+                        : "hover:bg-green-50 border-green-200"
+                    }`}
+                    onClick={() => setSelectedKeyword("overall")}
+                  >
+                    Overall View
+                  </Badge>
                 </div>
 
-                {/* Stats */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
+                <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center space-x-2">
-                    <Search className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Queries analyzed:</span>
-                    <span className="font-semibold">{mockInsightsData.summary.total_queries}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Generated:</span>
-                    <span className="font-semibold">{formatDate()}</span>
+                    <Calendar className="w-4 h-4" />
+                    <span>{formatDate()}</span>
                   </div>
                 </div>
               </div>
@@ -128,50 +148,158 @@ export default function Results() {
             <Button
               variant="ghost"
               onClick={() => navigate("/input")}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               New Analysis
             </Button>
           </div>
 
+          {/* Content based on selected keyword */}
+          {selectedKeyword === "overall" ? (
+            <div className="space-y-8">
+              {/* Overall AI Platform Breakdown */}
+              <Card className="bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">Overall AI Platform Visibility</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {insights.overall.ai_platforms.map((platform: any) => (
+                      <div key={platform.name} className="text-center">
+                        <div className={`w-16 h-16 ${platform.color} rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3`}>
+                          {platform.overall_visibility}%
+                        </div>
+                        <h3 className="font-semibold text-gray-900">{platform.name}</h3>
+                        <p className="text-sm text-gray-600">Average visibility</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Insight Cards */}
-          <InsightCards
-            data={mockInsightsData}
-            cardCount={resultsData.cardCount}
-            onViewQueries={handleViewQueries}
-            onViewSources={handleViewSources}
-            onViewAttributes={handleViewAttributes}
-          />
-
-          {/* Recommended Actions */}
-          <RecommendedActions actions={mockInsightsData.actions} />
-
-          {/* Drilldowns */}
-          <Drilldowns data={mockInsightsData.drilldowns} />
-
-          {/* Footer */}
-          <div className="mt-12 pt-8 border-t">
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-success rounded-full"></div>
-                  <span>Brand mentioned</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-destructive rounded-full"></div>
-                  <span>Not mentioned</span>
-                </div>
+              {/* Overall Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-white shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-blue-600 mb-2">
+                        {insights.overall.total_mentions}
+                      </div>
+                      <p className="text-sm text-gray-600">Total Brand Mentions</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-green-600 mb-2">
+                        {insights.overall.average_visibility}%
+                      </div>
+                      <p className="text-sm text-gray-600">Average Visibility</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-purple-600 mb-2">
+                        {insights.overall.total_queries}
+                      </div>
+                      <p className="text-sm text-gray-600">Queries Analyzed</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <Separator />
-              <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                This analysis is based on AI model responses and may not reflect all available data. 
-                Results are updated regularly as AI models evolve. For questions about specific insights, 
-                please review the detailed drilldowns above.
-              </p>
             </div>
-          </div>
+          ) : currentKeywordData ? (
+            <div className="space-y-8">
+              {/* AI Platform Breakdown for Keyword */}
+              <Card className="bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">AI Platform Visibility for "{selectedKeyword}"</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {currentKeywordData.metrics.ai_platforms.map((platform: any) => (
+                      <div key={platform.name} className="text-center">
+                        <div className={`w-16 h-16 ${platform.color} rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3`}>
+                          {platform.visibility}%
+                        </div>
+                        <h3 className="font-semibold text-gray-900">{platform.name}</h3>
+                        <p className="text-sm text-gray-600">Visibility rate</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Keyword Insights */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Competitors */}
+                <Card className="bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Top Competitors
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {currentKeywordData.competitors.slice(0, 5).map((competitor: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <span className="font-medium">{competitor.name}</span>
+                          <div className="flex items-center gap-3">
+                            <Progress value={competitor.percentage} className="w-20" />
+                            <span className="text-sm text-gray-600 w-12">{competitor.mentions}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Top Sources */}
+                <Card className="bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="w-5 h-5" />
+                      Influential Sources
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {currentKeywordData.sources.map((source: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between py-2">
+                          <span className="text-sm font-medium">{source.domain}</span>
+                          <Badge variant="outline">{source.count} citations</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Actions */}
+              <Card className="bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Recommended Actions for "{selectedKeyword}"</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {currentKeywordData.recommendations.map((action: string, index: number) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                        <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                          {index + 1}
+                        </div>
+                        <p className="text-sm text-gray-700">{action}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
         </div>
       </div>
     </Layout>
