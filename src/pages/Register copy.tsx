@@ -41,7 +41,9 @@ const Register = () => {
     }
 
     try {
-      await register(email, password, name);
+      const firstName = name.split(' ')[0] || name;
+      const lastName = name.split(' ').slice(1).join(' ') || '';
+      await register(email, password, firstName, lastName);
       toast({
         title: "Account created!",
         description: "Welcome to AI Search Visibility Checker.",

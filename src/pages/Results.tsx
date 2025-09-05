@@ -7,12 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Search, Globe, TrendingUp, Users, ExternalLink } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Calendar, Search, Globe, TrendingUp, Users, ExternalLink, Building2 } from "lucide-react";
 import { createKeywordInsights } from "@/data/keywordInsights";
+import { searchApi, analyticsApi } from "@/services/api";
 
 interface ResultsData {
   website: string;
+  companyName?: string;
   keywords: string[];
+  productId?: string;
+  applicationId?: string;
   isExample?: boolean;
 }
 
@@ -86,15 +91,23 @@ export default function Results() {
         <div className="sticky top-16 z-40 bg-white border-b shadow-sm">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col space-y-4">
-              {/* Website Info */}
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
-                  <Globe className="w-6 h-6" />
+              {/* Company Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <Building2 className="w-7 h-7" />
                 </div>
-                <div>
-                  <h1 className="font-bold text-xl text-gray-900">{resultsData.website}</h1>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h1 className="font-bold text-2xl text-gray-900">
+                      {resultsData.companyName || resultsData.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0]}
+                    </h1>
+                    <Badge variant="outline" className="text-xs">
+                      <Globe className="w-3 h-3 mr-1" />
+                      {resultsData.website.replace(/^https?:\/\//, '')}
+                    </Badge>
+                  </div>
                   <p className="text-sm text-gray-600">
-                    AI Search Visibility Analysis across {insights.overall.total_queries} queries
+                    AI Search Visibility Analysis • {insights.overall.total_queries} total queries • {resultsData.keywords.length} keywords analyzed
                   </p>
                 </div>
               </div>
@@ -159,21 +172,62 @@ export default function Results() {
           {selectedKeyword === "overall" ? (
             <div className="space-y-8">
               {/* Overall AI Platform Breakdown */}
-              <Card className="bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-xl">Overall AI Platform Visibility</CardTitle>
+              <Card className="bg-white shadow-sm border-l-4 border-l-blue-500">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-blue-600" />
+                    </div>
+                    {resultsData.companyName || resultsData.website.split('.')[0]}'s AI Platform Visibility
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">How often AI assistants mention your brand across all keywords</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {insights.overall.ai_platforms.map((platform: any) => (
-                      <div key={platform.name} className="text-center">
-                        <div className={`w-16 h-16 ${platform.color} rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3`}>
-                          {platform.overall_visibility}%
+                      <div key={platform.name} className="text-center group hover:scale-105 transition-transform cursor-pointer">
+                        <div className="relative mb-4">
+                          <div className={`w-20 h-20 ${platform.color} rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto shadow-lg group-hover:shadow-xl transition-shadow`}>
+                            {platform.overall_visibility}%
+                          </div>
+                          <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
+                            <div className={`w-3 h-3 ${platform.color} rounded-full`}></div>
+                          </div>
                         </div>
-                        <h3 className="font-semibold text-gray-900">{platform.name}</h3>
-                        <p className="text-sm text-gray-600">Average visibility</p>
+                        <h3 className="font-bold text-gray-900 mb-1">{platform.name}</h3>
+                        <p className="text-xs text-gray-500 mb-2">Average visibility</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 ${platform.color} rounded-full transition-all duration-500`}
+                            style={{ width: `${platform.overall_visibility}%` }}
+                          ></div>
+                        </div>
                       </div>
                     ))}
+                  </div>
+                  
+                  {/* Quick Insights */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <div className="text-lg font-bold text-green-700">
+                          {Math.max(...insights.overall.ai_platforms.map((p: any) => p.overall_visibility))}%
+                        </div>
+                        <p className="text-xs text-green-600">Highest Platform</p>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <div className="text-lg font-bold text-blue-700">
+                          {Math.round(insights.overall.ai_platforms.reduce((sum: number, p: any) => sum + p.overall_visibility, 0) / insights.overall.ai_platforms.length)}%
+                        </div>
+                        <p className="text-xs text-blue-600">Average Across All</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <div className="text-lg font-bold text-purple-700">
+                          {insights.overall.ai_platforms.filter((p: any) => p.overall_visibility > 30).length}/4
+                        </div>
+                        <p className="text-xs text-purple-600">Strong Presence</p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

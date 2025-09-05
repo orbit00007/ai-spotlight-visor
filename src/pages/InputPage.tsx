@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { productsApi } from "@/services/api";
 import { Loader2, X, Plus, Search, Globe, Tags, ExternalLink, AlertCircle } from "lucide-react";
 import validator from "validator";
 
@@ -17,7 +18,7 @@ export default function InputPage() {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState("");
-  const { user } = useAuth();
+  const { user, application, accessToken } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -86,18 +87,66 @@ export default function InputPage() {
       return;
     }
 
+    if (!application || !accessToken) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in again to continue.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate DNS check and analysis
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Extract company name from website URL for product name
+      let processedUrl = website.trim();
+      if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+        processedUrl = `https://${processedUrl}`;
+      }
+      
+      const hostname = new URL(processedUrl).hostname.replace('www.', '');
+      const companyName = hostname.split('.')[0];
+      
+      // Create product with keywords
+      const response = await productsApi.createProductWithKeywords(
+        `${companyName} Analysis`,
+        `AI Search Visibility Analysis for ${hostname}`,
+        processedUrl,
+        "Technology", // Default business domain - could be made configurable
+        application.id,
+        keywords,
+        accessToken
+      );
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      toast({
+        title: "Analysis started",
+        description: "Your AI search visibility analysis is being processed.",
+      });
+
       navigate("/results", {
         state: {
-          website: website.trim(),
+          website: processedUrl,
+          companyName: hostname,
           keywords,
+          productId: response.data?.id,
+          applicationId: application.id,
         },
       });
-    }, 3000);
+    } catch (error: any) {
+      toast({
+        title: "Analysis failed",
+        description: error.message || "Failed to start analysis. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const showExampleOutput = () => {
