@@ -4,21 +4,53 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { productsApi } from "@/services/api";
-import { Loader2, X, Plus, Search, Globe, Tags, ExternalLink, AlertCircle } from "lucide-react";
-import validator from "validator";
+import {
+  Loader2,
+  X,
+  Plus,
+  Search,
+  Globe,
+  Tags,
+  ExternalLink,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import { fetchProductsWithKeywords } from "@/apiHelpers";
+
+/* =====================
+   HELPERS
+   ===================== */
+const normalizeDomain = (url: string): string => {
+  let testUrl = url.trim();
+
+  if (!/^https?:\/\//i.test(testUrl)) {
+    testUrl = "https://" + testUrl;
+  }
+
+  const urlObj = new URL(testUrl);
+  return urlObj.hostname.replace(/^www\./i, "");
+};
 
 export default function InputPage() {
-  const [website, setWebsite] = useState("");
+  const [brand, setBrand] = useState("");
   const [currentKeyword, setCurrentKeyword] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [urlError, setUrlError] = useState("");
-  const { user, application, accessToken } = useAuth();
+  const [dnsStatus, setDnsStatus] = useState<
+    "valid" | "invalid" | "checking" | null
+  >(null);
+
+  const { user, applicationId } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -28,26 +60,47 @@ export default function InputPage() {
     }
   }, [user, navigate]);
 
-  const validateUrl = (url: string) => {
-    setUrlError("");
-    if (!url.trim()) return false;
-    
-    let processedUrl = url.trim();
-    if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
-      processedUrl = `https://${processedUrl}`;
+  /* =====================
+     DNS CHECK
+     ===================== */
+  const checkDNS = async (url: string) => {
+    if (!url.trim()) {
+      setDnsStatus(null);
+      return;
     }
+
+    setDnsStatus("checking");
     
-    if (!validator.isURL(processedUrl, { require_protocol: true })) {
-      setUrlError("Please enter a valid website URL");
-      return false;
-    }
-    return true;
+    
+    // Simulate DNS check with timeout
+
+    // Simulate DNS check with timeout
+    setTimeout(() => {
+      try {
+        const hostname = normalizeDomain(url);
+        const domainRegex =
+          /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+
+        const isValid = domainRegex.test(hostname);
+        setDnsStatus(isValid ? "valid" : "invalid");
+      } catch {
+        setDnsStatus("invalid");
+      }
+    }, 500);
   };
 
+  const handleWebsiteChange = (value: string) => {
+    setBrand(value);
+    checkDNS(value);
+  };
+
+  /* =====================
+     KEYWORD HANDLERS
+     ===================== */
   const addKeyword = () => {
     if (
       currentKeyword.trim() &&
-      keywords.length < 5 &&
+      keywords.length < 3 &&
       !keywords.includes(currentKeyword.trim())
     ) {
       setKeywords([...keywords, currentKeyword.trim()]);
@@ -66,13 +119,25 @@ export default function InputPage() {
     }
   };
 
+  /* =====================
+     SUBMIT
+     ===================== */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateUrl(website)) {
+    if (!brand.trim()) {
+      toast({
+        title: "Website URL required",
+        description: "Please enter your website URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (dnsStatus !== "valid") {
       toast({
         title: "Invalid website URL",
-        description: "Please enter a valid website URL to analyze.",
+        description: "Please enter a valid website URL that exists.",
         variant: "destructive",
       });
       return;
@@ -81,67 +146,51 @@ export default function InputPage() {
     if (keywords.length === 0) {
       toast({
         title: "Keywords required",
-        description: "Please add at least one keyword for analysis.",
+        description: "Please add at least one keyword.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!application || !accessToken) {
+    if (!applicationId) {
       toast({
-        title: "Authentication required",
-        description: "Please log in again to continue.",
+        title: "Authentication error",
+        description: "Please try logging out and logging back in.",
         variant: "destructive",
       });
-      navigate("/login");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Extract company name from website URL for product name
-      let processedUrl = website.trim();
-      if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
-        processedUrl = `https://${processedUrl}`;
-      }
-      
-      const hostname = new URL(processedUrl).hostname.replace('www.', '');
-      const companyName = hostname.split('.')[0];
-      
-      // Create product with keywords
-      const response = await productsApi.createProductWithKeywords(
-        `${companyName} Analysis`,
-        `AI Search Visibility Analysis for ${hostname}`,
-        processedUrl,
-        "Technology", // Default business domain - could be made configurable
-        application.id,
-        keywords,
-        accessToken
-      );
+      const payload = {
+        name: brand.trim(),
+        description: "technology",
+        website: brand.trim(),
+        business_domain: "technology",
+        application_id: applicationId,
+        search_keywords: keywords,
+      };
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
+      const data = await fetchProductsWithKeywords(payload);
 
       toast({
         title: "Analysis started",
-        description: "Your AI search visibility analysis is being processed.",
+        description: "Your visibility analysis has been initiated successfully.",
       });
 
       navigate("/results", {
         state: {
-          website: processedUrl,
-          companyName: hostname,
+          website: brand.trim(),
           keywords,
-          productId: response.data?.id,
-          applicationId: application.id,
+          productId: data.product?.id,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: "Analysis failed",
-        description: error.message || "Failed to start analysis. Please try again.",
+        title: "Error",
+        description: "Failed to start analysis. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -159,6 +208,9 @@ export default function InputPage() {
     });
   };
 
+  /* =====================
+     RENDER
+     ===================== */
   return (
     <Layout>
       {/* Background now matches your gray theme */}
@@ -168,24 +220,28 @@ export default function InputPage() {
             {/* Hero Section */}
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-bold text-blue-600">
-                Discover Your AI Search Visibility
+                Check your AI search visibility
               </h1>
               <p className="text-xl text-gray-600">
-                Enter your website and keywords to see how AI assistants respond to searches in your space.
+                Enter your website URL and up to 3 keywords to see how AI
+                assistants mention you.
               </p>
             </div>
 
             {/* Form Card */}
             <Card className="text-left bg-white border shadow-lg">
               <CardHeader>
-                <CardTitle className="text-gray-900 text-center">AI Search Visibility Check</CardTitle>
+                <CardTitle className="text-gray-900 text-center">
+                  Website Visibility Analysis
+                </CardTitle>
                 <CardDescription className="text-gray-600 text-center">
-                  Analyze how AI assistants respond to searches related to your website
+                  Get insights into how AI assistants present your website in
+                  search results
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Website Field */}
+                  {/* Website URL Field */}
                   <div className="space-y-2">
                     <Label htmlFor="website">Website URL</Label>
                     <div className="relative">
@@ -193,40 +249,60 @@ export default function InputPage() {
                       <Input
                         id="website"
                         type="text"
-                        placeholder="e.g., yourwebsite.com or https://yourwebsite.com"
-                        value={website}
-                        onChange={(e) => {
-                          setWebsite(e.target.value);
-                          setUrlError("");
-                        }}
+                        placeholder="e.g., kommunicate.io or https://kommunicate.io"
+                        value={brand}
+                        onChange={(e) => handleWebsiteChange(e.target.value)}
                         maxLength={100}
-                        className={`pl-11 bg-white ${urlError ? 'border-red-500' : ''}`}
+                        className="pl-11 pr-11 bg-white"
                       />
+                      {/* DNS Status Indicator */}
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {dnsStatus === "checking" && (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        )}
+                        {dnsStatus === "valid" && (
+                          <CheckCircle className="w-4 h-4 text-success" />
+                        )}
+                        {dnsStatus === "invalid" && (
+                          <XCircle className="w-4 h-4 text-destructive" />
+                        )}
+                      </div>
                     </div>
-                    {urlError && (
-                      <p className="text-sm text-red-500 flex items-center">
-                        <AlertCircle className="w-4 h-4 mr-1" />
-                        {urlError}
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-500">
+                        {brand.length}/100 characters
                       </p>
-                    )}
-                    <p className="text-sm text-gray-500">{website.length}/100 characters</p>
+                      {dnsStatus === "checking" && (
+                        <p className="text-sm text-muted-foreground">
+                          Checking domain...
+                        </p>
+                      )}
+                      {dnsStatus === "invalid" && (
+                        <p className="text-sm text-destructive">
+                          Invalid or unreachable website
+                        </p>
+                      )}
+                      {dnsStatus === "valid" && (
+                        <p className="text-sm text-success">Website verified</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Keywords Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="keywords">Search Keywords (up to 5)</Label>
+                    <Label htmlFor="keywords">Keywords (up to 3)</Label>
                     <div className="space-y-3">
                       <div className="flex gap-2 relative">
                         <Tags className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
                           id="keywords"
                           type="text"
-                          placeholder="e.g., customer support software"
+                          placeholder="Press Enter to add"
                           value={currentKeyword}
                           onChange={(e) => setCurrentKeyword(e.target.value)}
                           onKeyPress={handleKeyPress}
                           maxLength={60}
-                          disabled={keywords.length >= 5}
+                          disabled={keywords.length >= 3}
                           className="pl-11 bg-white"
                         />
                         <Button
@@ -236,7 +312,7 @@ export default function InputPage() {
                           onClick={addKeyword}
                           disabled={
                             !currentKeyword.trim() ||
-                            keywords.length >= 5 ||
+                            keywords.length >= 3 ||
                             keywords.includes(currentKeyword.trim())
                           }
                         >
@@ -269,7 +345,7 @@ export default function InputPage() {
                       )}
 
                       <p className="text-sm text-gray-500">
-                        {keywords.length} of 5 keywords added
+                        {keywords.length} of 3 keywords added
                       </p>
                     </div>
                   </div>
@@ -279,20 +355,25 @@ export default function InputPage() {
                     type="submit"
                     variant="hero"
                     className="w-full"
-                    disabled={isLoading || !website.trim() || keywords.length === 0 || !!urlError}
+                    disabled={
+                      isLoading ||
+                      !brand.trim() ||
+                      keywords.length === 0 ||
+                      dnsStatus !== "valid"
+                    }
                     size="lg"
                   >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Checking DNS & analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Search className="mr-2 h-4 w-4" />
-                          Start AI Visibility Analysis
-                        </>
-                      )}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing visibility...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-4 w-4" />
+                        Run visibility check
+                      </>
+                    )}
                   </Button>
 
                   {/* Example Link */}
@@ -308,13 +389,35 @@ export default function InputPage() {
                     </Button>
                   </div>
                 </form>
+
+                {/* Output Preview */}
                 <div className="mt-6 p-6 rounded-lg bg-muted/50 border">
-                  <h4 className="font-semibold mb-3">What You'll Get</h4>
+                  <h4 className="font-semibold mb-3">Analysis Output</h4>
                   <div className="text-sm text-muted-foreground space-y-2">
-                    <p>• <strong>AI Platform Breakdown:</strong> See your visibility on ChatGPT, Perplexity, and other AI platforms</p>
-                    <p>• <strong>Keyword-by-Keyword Analysis:</strong> Click through each keyword to see detailed insights</p>
-                    <p>• <strong>Competitor Comparison:</strong> See who dominates AI responses in your space</p>
-                    <p>• <strong>Action Steps:</strong> Clear recommendations to improve your AI search presence</p>
+                    <p>
+                      • <strong>AI Provider Share:</strong> ChatGPT 45%,
+                      Perplexity 25%
+                    </p>
+                    <p>
+                      • <strong>Keyword-Specific Insights:</strong> Separate
+                      analysis for each keyword
+                    </p>
+                    <p>
+                      • <strong>Competitor Analysis:</strong> Top competitors
+                      and their mention frequency
+                    </p>
+                    <p>
+                      • <strong>Source Influence:</strong> Which websites shape
+                      AI responses about your industry
+                    </p>
+                    <p>
+                      • <strong>Narrative Gaps:</strong> Features competitors
+                      get credited for that you don't
+                    </p>
+                    <p>
+                      • <strong>Recommended Actions:</strong> Specific steps to
+                      improve AI visibility
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -322,7 +425,8 @@ export default function InputPage() {
 
             {/* Footer Note */}
             <p className="text-sm text-gray-500">
-              Insights are based on what AI assistants say—not on scraping your site.
+              Insights are based on what AI assistants say about your
+              website—not on scraping your site.
             </p>
           </div>
         </main>

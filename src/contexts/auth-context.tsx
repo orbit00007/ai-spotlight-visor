@@ -1,114 +1,60 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi } from '@/services/api';
+import React, { createContext, useContext, useState } from "react";
+import {
+  login as loginAPI,
+  register as registerAPI,
+  LoginResponse,
+  RegisterRequest,
+} from "@/apiHelpers";
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  first_name?: string;
-  last_name?: string;
-}
-
-interface Application {
-  id: string;
-  company_name: string;
-  project_token: string;
-}
-
+/* =====================
+   TYPES
+   ===================== */
 interface AuthContextType {
-  user: User | null;
-  application: Application | null;
-  accessToken: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, firstName: string, lastName: string, companyName?: string) => Promise<void>;
-  logout: () => void;
+  user: LoginResponse["user"] | null;
+  applicationId: string | null;
   isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    appName?: string
+  ) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [application, setApplication] = useState<Application | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [user, setUser] = useState<LoginResponse["user"] | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Check for stored user on mount
-    const storedUser = localStorage.getItem('user');
-    const storedApplication = localStorage.getItem('application');
-    const storedToken = localStorage.getItem('accessToken');
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    if (storedApplication) {
-      setApplication(JSON.parse(storedApplication));
-    }
-    if (storedToken) {
-      setAccessToken(storedToken);
-    }
-    setIsLoading(false);
-  }, []);
-
+  /* =====================
+     LOGIN
+     ===================== */
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await authApi.login(email, password);
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      if (response.data) {
-        const { user: userData, access_token } = response.data;
-        const formattedUser = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.first_name && userData.last_name 
-            ? `${userData.first_name} ${userData.last_name}` 
-            : userData.email.split('@')[0],
-          first_name: userData.first_name,
-          last_name: userData.last_name
-        };
+      const res = await loginAPI({ email, password });
+      if (res.user) {
+        setUser(res.user);
+        localStorage.setItem("access_token", res.access_token);
         
-        setUser(formattedUser);
-        setAccessToken(access_token);
-        localStorage.setItem('user', JSON.stringify(formattedUser));
-        localStorage.setItem('accessToken', access_token);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (email: string, password: string, firstName: string, lastName: string, companyName?: string) => {
-    setIsLoading(true);
-    try {
-      const response = await authApi.register(email, password, firstName, lastName, companyName);
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      if (response.data) {
-        const { user: userData, access_token, application: appData } = response.data;
-        const formattedUser = {
-          id: userData.id,
-          email: userData.email,
-          name: `${userData.first_name} ${userData.last_name}`,
-          first_name: userData.first_name,
-          last_name: userData.last_name
-        };
+        // Extract application_id from owned_applications or application field
+        let appId = null;
+        if ((res.user as any)?.owned_applications && (res.user as any).owned_applications.length > 0) {
+          appId = (res.user as any).owned_applications[0].id;
+        } else if ((res as any).application?.id) {
+          appId = (res as any).application.id;
+        }
         
-        setUser(formattedUser);
-        setAccessToken(access_token);
-        localStorage.setItem('user', JSON.stringify(formattedUser));
-        localStorage.setItem('accessToken', access_token);
-        
-        if (appData) {
-          setApplication(appData);
-          localStorage.setItem('application', JSON.stringify(appData));
+        if (appId) {
+          setApplicationId(appId);
+          localStorage.setItem("application_id", appId);
         }
       }
     } finally {
@@ -116,34 +62,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /* =====================
+     REGISTER (auto-login after success)
+     ===================== */
+  const register = async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    appName: string = "DefaultApp"
+  ) => {
+    setIsLoading(true);
+    try {
+      const payload: RegisterRequest = {
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        app_name: appName,
+      };
+
+      const response = await registerAPI(payload);
+      
+      // Set application_id from registration response
+      if ((response as any).application?.id) {
+        setApplicationId((response as any).application.id);
+        localStorage.setItem("application_id", (response as any).application.id);
+      }
+
+      // Auto-login after register
+      await login(email, password);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /* =====================
+     LOGOUT
+     ===================== */
   const logout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("application_id");
     setUser(null);
-    setApplication(null);
-    setAccessToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('application');
-    localStorage.removeItem('accessToken');
+    setApplicationId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      application, 
-      accessToken, 
-      login, 
-      register, 
-      logout, 
-      isLoading 
-    }}>
+    <AuthContext.Provider value={{ user, applicationId, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+/* =====================
+   HOOK
+   ===================== */
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};

@@ -14,7 +14,6 @@ import {
   Search,
   TrendingUp,
   Users,
-  Globe,
   Shield,
   ArrowRight,
   CheckCircle,
@@ -22,7 +21,7 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleCheckVisibility = () => {
@@ -32,6 +31,7 @@ const Index = () => {
       navigate("/login");
     }
   };
+
   const features = [
     {
       icon: <Search className="w-8 h-8 text-primary" />,
@@ -66,6 +66,17 @@ const Index = () => {
     { number: "5x", label: "Higher value per AI visitor" },
   ];
 
+  // ✅ Handle loading state to prevent blank page
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen text-lg">
+          Loading...
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen">
@@ -88,30 +99,39 @@ const Index = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {user ? (
-                  <Link to="/input">
-                    <Button variant="hero" size="lg" className="text-lg px-8">
-                      <Search className="w-5 h-5 mr-2" />
-                      Check Your Visibility
+                  <Link to="/input" className="w-full sm:w-auto">
+                    <Button
+                      variant="hero"
+                      size="lg"
+                      className="text-lg px-8 w-full sm:w-auto"
+                    >
+                      New Analysis
+                      <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
                   </Link>
                 ) : (
-                  <Link to="/register">
-                    <Button variant="hero" size="lg" className="text-lg px-8">
-                      <Zap className="w-5 h-5 mr-2" />
-                      Get Started Free
+                  <>
+                    <Link to="/register" className="w-full sm:w-auto">
+                      <Button
+                        variant="hero"
+                        size="lg"
+                        className="text-lg px-8 w-full sm:w-auto"
+                      >
+                        <Zap className="w-5 h-5 mr-2" />
+                        Get Started Free
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="text-lg px-8 w-full sm:w-auto"
+                      onClick={handleCheckVisibility}
+                    >
+                      Check Your Visibility
+                      <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
-                  </Link>
+                  </>
                 )}
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="text-lg px-8"
-                  onClick={handleCheckVisibility}
-                >
-                  <Search className="w-5 h-5 mr-2" />
-                  {user ? "New Analysis" : "Check Your Visibility"}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
               </div>
             </div>
           </div>
