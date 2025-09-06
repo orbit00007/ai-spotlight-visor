@@ -78,14 +78,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const response = await registerAPI(payload);
       
-      // Set application_id from registration response (application.id field)
-      if (response.application?.id) {
-        setApplicationId(response.application.id);
-        localStorage.setItem("application_id", response.application.id);
+      // Registration response format: { user, application, access_token, refresh_token }
+      if (response.user && response.access_token) {
+        setUser(response.user);
+        localStorage.setItem("access_token", response.access_token);
+        
+        if (response.refresh_token) {
+          localStorage.setItem("refresh_token", response.refresh_token);
+        }
+        
+        // Set application_id from registration response (application.id field)
+        if (response.application?.id) {
+          setApplicationId(response.application.id);
+          localStorage.setItem("application_id", response.application.id);
+        }
       }
-
-      // Auto-login after register
-      await login(email, password);
     } finally {
       setIsLoading(false);
     }
