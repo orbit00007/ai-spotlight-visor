@@ -166,27 +166,31 @@ export default function InputPage() {
     try {
       const payload = {
         name: brand.trim(),
-        description: "technology",
+        description: "product",
         website: brand.trim(),
-        business_domain: "technology",
+        business_domain: "Technology",
         application_id: applicationId,
         search_keywords: keywords,
       };
 
       const data = await fetchProductsWithKeywords(payload);
 
+      // Store the API response data
+      const resultData = {
+        product: data.product,
+        search_keywords: data.search_keywords,
+        message: data.message,
+        companyName: data.product?.name || brand.trim()
+      };
+      
+      localStorage.setItem('searchResults', JSON.stringify(resultData));
+
       toast({
-        title: "Analysis started",
-        description: "Your visibility analysis has been initiated successfully.",
+        title: "Success!",
+        description: data.message || "Visibility check completed successfully.",
       });
 
-      navigate("/results", {
-        state: {
-          website: brand.trim(),
-          keywords,
-          productId: data.product?.id,
-        },
-      });
+      navigate("/results");
     } catch (error) {
       toast({
         title: "Error",

@@ -40,19 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(true);
     try {
       const res = await loginAPI({ email, password });
-      if (res.user) {
+      if (res.user && res.access_token) {
         setUser(res.user);
         localStorage.setItem("access_token", res.access_token);
         
-        // Extract application_id from owned_applications or application field
-        let appId = null;
-        if ((res.user as any)?.owned_applications && (res.user as any).owned_applications.length > 0) {
-          appId = (res.user as any).owned_applications[0].id;
-        } else if ((res as any).application?.id) {
-          appId = (res as any).application.id;
-        }
-        
-        if (appId) {
+        // Extract application_id from owned_applications
+        if (res.user.owned_applications && res.user.owned_applications.length > 0) {
+          const appId = res.user.owned_applications[0].id;
           setApplicationId(appId);
           localStorage.setItem("application_id", appId);
         }
@@ -84,10 +78,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const response = await registerAPI(payload);
       
-      // Set application_id from registration response
-      if ((response as any).application?.id) {
-        setApplicationId((response as any).application.id);
-        localStorage.setItem("application_id", (response as any).application.id);
+      // Set application_id from registration response (application.id field)
+      if (response.application?.id) {
+        setApplicationId(response.application.id);
+        localStorage.setItem("application_id", response.application.id);
       }
 
       // Auto-login after register

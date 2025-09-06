@@ -11,8 +11,26 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   access_token: string;
-  refresh_token?: string;
-  user?: { id: string; email: string; first_name: string; last_name: string };
+  user: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    owned_applications: Array<{
+      id: string;
+      user_id: string;
+      company_name: string;
+      project_token: string;
+      created_at: string;
+      updated_at: string;
+      deleted_at: string | null;
+    }>;
+  };
+  applications: any[];
 }
 
 export interface RegisterRequest {
