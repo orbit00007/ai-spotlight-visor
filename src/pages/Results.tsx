@@ -4,22 +4,118 @@ import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockInsightsData } from "@/data/mockInsights";
-import { ArrowLeft, Calendar, Search } from "lucide-react";
+import { ArrowLeft, Calendar, Search, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { getProductAnalytics, getKeywordAnalytics } from "@/apiHelpers";
 
 interface ResultsData {
   website: string;
   keywords: string[];
+  product: {
+    id: string;
+    name: string;
+  };
+  search_keywords: Array<{
+    id: string;
+    keyword: string;
+  }>;
   isExample?: boolean;
+}
+
+interface InsightCard {
+  title: string;
+  value: string;
+  trend: "up" | "down" | "stable";
+  description: string;
+  icon: string;
+}
+
+interface RecommendedAction {
+  category: string;
+  priority: "high" | "medium" | "low";
+  action: string;
+  impact: string;
+  effort: "high" | "medium" | "low";
+}
+
+interface AnalyticsData {
+  id: string;
+  type: string;
+  status: string;
+  analytics: {
+    insight_cards: InsightCard[];
+    recommended_actions: RecommendedAction[];
+    drilldowns: {
+      query_explorer: Array<{
+        query: string;
+        performance_score: number;
+        search_volume: string;
+        competition: string;
+      }>;
+      sources_list: Array<{
+        source: string;
+        frequency: number;
+        relevance_score: number;
+        url: string;
+      }>;
+      attributes_matrix: Array<{
+        attribute: string;
+        value: string;
+        frequency: number;
+        importance: string;
+      }>;
+    };
+    reason_missing?: string;
+  };
+  created_at: string;
+  updated_at: string;
 }
 
 export default function Results() {
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [currentTab, setCurrentTab] = useState("overall");
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [keywordAnalytics, setKeywordAnalytics] = useState<Record<string, AnalyticsData>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const accessToken = localStorage.getItem("access_token");
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch overall analytics data
+  const fetchOverallAnalytics = async () => {
+    if (!resultsData || !accessToken) return;
+
+    setIsLoading(true);
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const response = await getProductAnalytics(resultsData.product.id, today, accessToken);
+      setAnalyticsData(response);
+    } catch (error) {
+      console.error('Error fetching overall analytics:', error);
+      toast.error('Failed to load overall analytics');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch keyword analytics data
+  const fetchKeywordAnalytics = async (keywordId: string) => {
+    if (!accessToken || keywordAnalytics[keywordId]) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const response = await getKeywordAnalytics(keywordId, today, accessToken);
+      setKeywordAnalytics(prev => ({
+        ...prev,
+        [keywordId]: response
+      }));
+    } catch (error) {
+      console.error('Error fetching keyword analytics:', error);
+      toast.error('Failed to load keyword analytics');
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -35,6 +131,50 @@ export default function Results() {
       navigate("/input");
     }
   }, [user, navigate, location.state]);
+
+  // Fetch overall analytics when results data is available
+  useEffect(() => {
+    if (resultsData && currentTab === "overall") {
+      fetchOverallAnalytics();
+    }
+  }, [resultsData, currentTab]);
+
+  // Handle tab change
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
+    
+    if (tab.startsWith("keyword-")) {
+      const keywordIndex = parseInt(tab.split("-")[1]);
+      const keyword = resultsData?.search_keywords[keywordIndex];
+      if (keyword) {
+        fetchKeywordAnalytics(keyword.id);
+      }
+    } else if (tab === "overall") {
+      fetchOverallAnalytics();
+    }
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case "up":
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case "down":
+        return <TrendingDown className="w-4 h-4 text-red-500" />;
+      default:
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "destructive";
+      case "medium":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
 
   if (!resultsData) {
     return (
@@ -92,10 +232,10 @@ export default function Results() {
                 <div className="flex items-center space-x-2">
                   <Search className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    Queries analyzed:
+                    Keywords analyzed:
                   </span>
                   <span className="font-semibold">
-                    {mockInsightsData.overall.total_queries}
+                    {resultsData.search_keywords.length}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -121,6 +261,7 @@ export default function Results() {
               New Analysis
             </Button>
           </div>
+          
           {/* Keywords Menu */}
           <div className="mb-6">
             <div className="bg-card border rounded-lg p-4">
@@ -128,23 +269,23 @@ export default function Results() {
                 Navigate by Keyword
               </h3>
               <div className="flex flex-wrap gap-2">
-                {resultsData.keywords.map((keyword, index) => (
+                {resultsData.search_keywords.map((keyword, index) => (
                   <Button
                     key={index}
                     variant={
                       currentTab === `keyword-${index}` ? "default" : "outline"
                     }
                     size="sm"
-                    onClick={() => setCurrentTab(`keyword-${index}`)}
+                    onClick={() => handleTabChange(`keyword-${index}`)}
                     className="text-sm"
                   >
-                    {keyword}
+                    {keyword.keyword}
                   </Button>
                 ))}
                 <Button
                   variant={currentTab === "overall" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setCurrentTab("overall")}
+                  onClick={() => handleTabChange("overall")}
                   className="text-sm"
                 >
                   Overall View
@@ -156,210 +297,137 @@ export default function Results() {
           {/* Content based on selected tab */}
           {currentTab === "overall" && (
             <>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                {/* AI Provider Share Cards */}
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full"></div>
-                      <span className="text-sm font-medium">ChatGPT</span>
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {mockInsightsData.overall.ai_provider_share.chatgpt}%
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Share of mentions
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
-                      <span className="text-sm font-medium">Perplexity</span>
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {mockInsightsData.overall.ai_provider_share.perplexity}%
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Share of mentions
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Overall Combined Insights */}
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
-                      <span className="text-sm font-medium">
-                        Market Positioning
-                      </span>
-                    </div>
-                    <div className="text-lg font-semibold mb-2">
-                      {
-                        mockInsightsData.overall.combined_insights
-                          .market_positioning
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full"></div>
-                      <span className="text-sm font-medium">
-                        Core Strengths
-                      </span>
-                    </div>
-                    <div className="text-lg font-semibold mb-2">
-                      {
-                        mockInsightsData.overall.combined_insights
-                          .core_strengths
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full"></div>
-                      <span className="text-sm font-medium">
-                        Competitive Pressure
-                      </span>
-                    </div>
-                    <div className="text-lg font-semibold mb-2">
-                      {
-                        mockInsightsData.overall.combined_insights
-                          .competitive_pressure
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-3 h-3 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full"></div>
-                      <span className="text-sm font-medium">
-                        User Sentiment
-                      </span>
-                    </div>
-                    <div className="text-lg font-semibold mb-2">
-                      {
-                        mockInsightsData.overall.combined_insights
-                          .user_sentiment
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Overall Recommended Actions */}
-              <Card className="card-gradient border-0 mb-8">
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-4">
-                    Consolidated Recommendations
-                  </h3>
-                  <div className="space-y-6">
-                    {mockInsightsData.overall.consolidated_actions.map(
-                      (actionGroup, index) => (
-                        <div key={index}>
-                          <div className="flex items-center space-x-2 mb-3">
-                            <Badge
-                              variant={
-                                actionGroup.priority === "high"
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {actionGroup.priority.toUpperCase()}
-                            </Badge>
-                            <h4 className="font-semibold">
-                              {actionGroup.category}
-                            </h4>
-                          </div>
-                          <div className="grid gap-3 md:grid-cols-1">
-                            {actionGroup.actions.map((action, actionIndex) => (
-                              <div
-                                key={actionIndex}
-                                className="flex items-start space-x-3 p-4 rounded-lg bg-accent/50"
-                              >
-                                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0 mt-1">
-                                  {actionIndex + 1}
-                                </div>
-                                <span className="text-sm">{action}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    )}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+                    <p className="text-muted-foreground">Loading analytics...</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Overall Sources and Queries */}
-              <div className="grid gap-6 md:grid-cols-2 mb-8">
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Top Sources</h3>
-                    <div className="space-y-3">
-                      {mockInsightsData.overall.top_sources.map(
-                        (source, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="text-sm">
-                              {source.source
-                                .replace("https://", "")
-                                .replace("www.", "")}
-                            </span>
+                </div>
+              ) : analyticsData ? (
+                <>
+                  {/* Insight Cards */}
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                    {analyticsData.analytics.insight_cards.map((card, index) => (
+                      <Card key={index} className="card-gradient border-0">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-2">
-                              <Badge variant="outline">
-                                {source.frequency}
+                              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
+                              <span className="text-sm font-medium">{card.title}</span>
+                            </div>
+                            {getTrendIcon(card.trend)}
+                          </div>
+                          <div className="text-lg font-semibold mb-2">{card.value}</div>
+                          <p className="text-xs text-muted-foreground">{card.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Recommended Actions */}
+                  <Card className="card-gradient border-0 mb-8">
+                    <CardContent className="p-6">
+                      <h3 className="text-xl font-semibold mb-4">Recommended Actions</h3>
+                      <div className="space-y-4">
+                        {analyticsData.analytics.recommended_actions.map((action, index) => (
+                          <div key={index} className="p-4 rounded-lg bg-accent/50">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Badge variant={getPriorityColor(action.priority) as any}>
+                                {action.priority.toUpperCase()}
                               </Badge>
-                              <div className="w-16 h-2 bg-muted rounded-full">
-                                <div
-                                  className="h-full bg-primary rounded-full"
-                                  style={{
-                                    width: `${(source.frequency / 16) * 100}%`,
-                                  }}
-                                ></div>
+                              <span className="font-semibold">{action.category}</span>
+                              <Badge variant="outline">{action.effort} effort</Badge>
+                            </div>
+                            <p className="text-sm mb-2">{action.action}</p>
+                            <p className="text-xs text-muted-foreground">{action.impact}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Drilldowns */}
+                  <div className="grid gap-6 md:grid-cols-2 mb-8">
+                    {/* Query Explorer */}
+                    <Card className="card-gradient border-0">
+                      <CardContent className="p-6">
+                        <h3 className="font-semibold mb-4">Query Explorer</h3>
+                        <div className="space-y-3">
+                          {analyticsData.analytics.drilldowns.query_explorer.slice(0, 8).map((query, index) => (
+                            <div key={index} className="flex items-start space-x-2">
+                              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium flex-shrink-0 mt-1">
+                                {query.performance_score}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm">{query.query}</p>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">{query.search_volume}</Badge>
+                                  <Badge variant="outline" className="text-xs">{query.competition}</Badge>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Top Queries</h3>
-                    <div className="space-y-2">
-                      {mockInsightsData.overall.top_queries.map(
-                        (query, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start space-x-2"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
-                            <span className="text-sm">{query}</span>
+                    {/* Sources List */}
+                    <Card className="card-gradient border-0">
+                      <CardContent className="p-6">
+                        <h3 className="font-semibold mb-4">Top Sources</h3>
+                        <div className="space-y-3">
+                          {analyticsData.analytics.drilldowns.sources_list.map((source, index) => (
+                            <div key={index} className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{source.source}</p>
+                                <p className="text-xs text-muted-foreground">{source.url}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Badge variant="outline">{source.frequency}</Badge>
+                                <div className="w-16 h-2 bg-muted rounded-full">
+                                  <div
+                                    className="h-full bg-primary rounded-full"
+                                    style={{ width: `${Math.min((source.relevance_score / 10) * 100, 100)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Attributes Matrix */}
+                  <Card className="card-gradient border-0">
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold mb-4">Key Attributes</h3>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {analyticsData.analytics.drilldowns.attributes_matrix.map((attr, index) => (
+                          <div key={index} className="p-4 rounded-lg bg-accent/30">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium">{attr.attribute}</h4>
+                              <Badge variant={attr.importance === "high" ? "default" : "outline"}>
+                                {attr.importance}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">{attr.value}</p>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs">Frequency:</span>
+                              <Badge variant="outline">{attr.frequency}</Badge>
+                            </div>
                           </div>
-                        )
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No analytics data available</p>
+                </div>
+              )}
             </>
           )}
 
@@ -368,257 +436,115 @@ export default function Results() {
             <div className="space-y-8">
               {(() => {
                 const keywordIndex = parseInt(currentTab.split("-")[1]);
-                const keywordData = mockInsightsData.keywordData[keywordIndex];
+                const keyword = resultsData.search_keywords[keywordIndex];
+                const keywordData = keyword ? keywordAnalytics[keyword.id] : null;
 
-                if (!keywordData) return null;
+                if (!keyword) return null;
 
                 return (
                   <>
-                    {/* AI Provider Share for this keyword */}
-                    <div className="grid gap-4 md:grid-cols-4">
-                      <Card className="card-gradient border-0">
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full"></div>
-                            <span className="text-sm font-medium">ChatGPT</span>
-                          </div>
-                          <div className="text-2xl font-bold">
-                            {keywordData.analytics.ai_provider_share.chatgpt}%
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            For this keyword
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="card-gradient border-0">
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
-                            <span className="text-sm font-medium">
-                              Perplexity
-                            </span>
-                          </div>
-                          <div className="text-2xl font-bold">
-                            {keywordData.analytics.ai_provider_share.perplexity}
-                            %
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            For this keyword
-                          </p>
-                        </CardContent>
-                      </Card>
+                    <div className="text-center mb-6">
+                      <h3 className="text-2xl font-semibold mb-2">
+                        Insights for "{keyword.keyword}"
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Deep dive analysis for this keyword
+                      </p>
                     </div>
 
-                    <div className="space-y-6">
-                      {/* Header */}
-                      <div className="text-center">
-                        <h3 className="text-2xl font-semibold mb-2">
-                          Insights for "{keywordData.keyword}"
-                        </h3>
-                        <p className="text-muted-foreground">
-                          Deep dive analysis for this keyword
-                        </p>
-                      </div>
-
-                      {/* Insight Cards */}
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                        {keywordData.analytics.insight_cards.map(
-                          (card, index) => (
-                            <Card
-                              key={index}
-                              className="card-gradient border-0"
-                            >
+                    {keywordData ? (
+                      <>
+                        {/* Insight Cards */}
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                          {keywordData.analytics.insight_cards.map((card, index) => (
+                            <Card key={index} className="card-gradient border-0">
                               <CardContent className="p-6">
-                                <div className="flex items-center space-x-2 mb-3">
-                                  <div
-                                    className={`w-3 h-3 rounded-full ${
-                                      card.trend === "up"
-                                        ? "bg-gradient-to-r from-green-500 to-green-600"
-                                        : card.trend === "down"
-                                        ? "bg-gradient-to-r from-red-500 to-red-600"
-                                        : card.trend === "mixed"
-                                        ? "bg-gradient-to-r from-yellow-500 to-yellow-600"
-                                        : "bg-gradient-to-r from-blue-500 to-blue-600"
-                                    }`}
-                                  ></div>
-                                  <span className="text-sm font-medium">
-                                    {card.title}
-                                  </span>
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full"></div>
+                                    <span className="text-sm font-medium">{card.title}</span>
+                                  </div>
+                                  {getTrendIcon(card.trend)}
                                 </div>
-                                <div className="text-lg font-semibold mb-2">
-                                  {card.value}
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {card.description}
-                                </p>
+                                <div className="text-lg font-semibold mb-2">{card.value}</div>
+                                <p className="text-xs text-muted-foreground">{card.description}</p>
                               </CardContent>
                             </Card>
-                          )
-                        )}
-                      </div>
+                          ))}
+                        </div>
 
-                      {/* Recommended Actions */}
-                      <Card className="card-gradient border-0 mb-8">
-                        <CardContent className="p-6">
-                          <h3 className="text-xl font-semibold mb-4">
-                            Recommended Actions
-                          </h3>
-                          <div className="space-y-4">
-                            {keywordData.analytics.recommended_actions.map(
-                              (action, index) => (
-                                <div
-                                  key={index}
-                                  className="border rounded-lg p-4"
-                                >
+                        {/* Recommended Actions */}
+                        <Card className="card-gradient border-0 mb-8">
+                          <CardContent className="p-6">
+                            <h3 className="text-xl font-semibold mb-4">Recommended Actions</h3>
+                            <div className="space-y-4">
+                              {keywordData.analytics.recommended_actions.map((action, index) => (
+                                <div key={index} className="p-4 rounded-lg bg-accent/50">
                                   <div className="flex items-center space-x-2 mb-2">
-                                    <Badge
-                                      variant={
-                                        action.priority === "high"
-                                          ? "destructive"
-                                          : "secondary"
-                                      }
-                                    >
+                                    <Badge variant={getPriorityColor(action.priority) as any}>
                                       {action.priority.toUpperCase()}
                                     </Badge>
-                                    <span className="font-semibold">
-                                      {action.category}
-                                    </span>
+                                    <span className="font-semibold">{action.category}</span>
+                                    <Badge variant="outline">{action.effort} effort</Badge>
                                   </div>
-                                  <div className="mb-3">
-                                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-accent/50">
-                                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                                        {index + 1}
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="text-sm font-medium mb-1">
-                                          {action.action}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground mb-2">
-                                          <strong>Impact:</strong>{" "}
-                                          {action.impact}
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            Effort: {action.effort}
-                                          </Badge>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
+                                  <p className="text-sm mb-2">{action.action}</p>
+                                  <p className="text-xs text-muted-foreground">{action.impact}</p>
                                 </div>
-                              )
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
 
-                      {/* Sources and Queries */}
-                      <div className="grid gap-6 md:grid-cols-2 mb-8">
-                        <Card className="card-gradient border-0">
-                          <CardContent className="p-6">
-                            <h3 className="font-semibold mb-4">Top Sources</h3>
-                            <div className="space-y-3">
-                              {keywordData.analytics.drilldowns.sources_list.map(
-                                (source, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-center justify-between"
-                                  >
-                                    <span className="text-sm">
-                                      {source.source
-                                        .replace("https://", "")
-                                        .replace("www.", "")}
-                                    </span>
-                                    <div className="flex items-center space-x-2">
-                                      <Badge variant="outline">
-                                        {source.frequency}
-                                      </Badge>
-                                      <div className="w-16 h-2 bg-muted rounded-full">
-                                        <div
-                                          className="h-full bg-primary rounded-full"
-                                          style={{
-                                            width: `${
-                                              (source.frequency / 9) * 100
-                                            }%`,
-                                          }}
-                                        ></div>
+                        {/* Query Explorer and Sources */}
+                        <div className="grid gap-6 md:grid-cols-2">
+                          <Card className="card-gradient border-0">
+                            <CardContent className="p-6">
+                              <h3 className="font-semibold mb-4">Related Queries</h3>
+                              <div className="space-y-3">
+                                {keywordData.analytics.drilldowns.query_explorer.slice(0, 6).map((query, index) => (
+                                  <div key={index} className="flex items-start space-x-2">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium flex-shrink-0 mt-1">
+                                      {query.performance_score}
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm">{query.query}</p>
+                                      <div className="flex items-center space-x-2 mt-1">
+                                        <Badge variant="outline" className="text-xs">{query.search_volume}</Badge>
+                                        <Badge variant="outline" className="text-xs">{query.competition}</Badge>
                                       </div>
                                     </div>
                                   </div>
-                                )
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
 
-                        <Card className="card-gradient border-0">
-                          <CardContent className="p-6">
-                            <h3 className="font-semibold mb-4">
-                              Related Queries
-                            </h3>
-                            <div className="space-y-2">
-                              {keywordData.analytics.drilldowns.query_explorer.map(
-                                (query, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-start space-x-2"
-                                  >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
-                                    <span className="text-sm">
-                                      {query.query}
-                                    </span>
+                          <Card className="card-gradient border-0">
+                            <CardContent className="p-6">
+                              <h3 className="font-semibold mb-4">Key Sources</h3>
+                              <div className="space-y-3">
+                                {keywordData.analytics.drilldowns.sources_list.slice(0, 6).map((source, index) => (
+                                  <div key={index} className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-sm font-medium">{source.source}</p>
+                                      <p className="text-xs text-muted-foreground truncate">{source.url}</p>
+                                    </div>
+                                    <Badge variant="outline">{source.frequency}</Badge>
                                   </div>
-                                )
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                          <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+                          <p className="text-muted-foreground">Loading keyword analytics...</p>
+                        </div>
                       </div>
-
-                      {/* Attributes Matrix */}
-                      <Card className="card-gradient border-0">
-                        <CardContent className="p-6">
-                          <h3 className="font-semibold mb-4">Key Attributes</h3>
-                          <div className="space-y-4">
-                            {keywordData.analytics.drilldowns.attributes_matrix.map(
-                              (attr, index) => (
-                                <div
-                                  key={index}
-                                  className="border rounded-lg p-4"
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium">
-                                      {attr.attribute}
-                                    </span>
-                                    <div className="flex items-center space-x-2">
-                                      <Badge
-                                        variant={
-                                          attr.importance === "high"
-                                            ? "destructive"
-                                            : "secondary"
-                                        }
-                                      >
-                                        {attr.importance}
-                                      </Badge>
-                                      <Badge variant="outline">
-                                        Freq: {attr.frequency}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {attr.value}
-                                  </p>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
+                    )}
                   </>
                 );
               })()}

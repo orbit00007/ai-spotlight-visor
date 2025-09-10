@@ -167,3 +167,24 @@ export const fetchProductsWithKeywords = async (
   const res = await API.post(API_ENDPOINTS.createProductWithKeywords, payload);
   return res.data;
 };
+
+/* =====================
+   ANALYTICS HELPERS
+   ===================== */
+export const getProductAnalytics = async (productId: string, date: string, accessToken: string): Promise<any> => {
+  const res = await API.get(API_ENDPOINTS.getProductAnalytics(productId, date), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return res.data;
+};
+
+export const getKeywordAnalytics = async (keywordId: string, date: string, accessToken: string): Promise<any> => {
+  const res = await API.get(API_ENDPOINTS.getKeywordAnalytics(keywordId, date), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return res.data;
+};
