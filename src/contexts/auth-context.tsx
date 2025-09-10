@@ -1,16 +1,21 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   login as loginAPI,
   register as registerAPI,
   LoginResponse,
   RegisterRequest,
+  RegisterResponse,
 } from "@/apiHelpers";
 
 /* =====================
    TYPES
    ===================== */
+interface ExtendedUser extends NonNullable<LoginResponse["user"]> {
+  owned_applications?: { id: string; company_name: string; project_token: string }[];
+}
+
 interface AuthContextType {
-  user: LoginResponse["user"] | null;
+  user: ExtendedUser | null;
   applicationId: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -26,12 +31,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [user, setUser] = useState<LoginResponse["user"] | null>(null);
+/* =====================
+   PROVIDER
+   ===================== */
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  /* Restore state from localStorage on refresh */
+  useEffect(() => {
+    const storedAppId = localStorage.getItem("application_id");
+    if (storedAppId) {
+      setApplicationId(storedAppId);
+    }
+    // Optionally: you could fetch /me endpoint here to hydrate `user`
+  }, []);
 
   /* =====================
      LOGIN
@@ -40,15 +55,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(true);
     try {
       const res = await loginAPI({ email, password });
-      if (res.user && res.access_token) {
-        setUser(res.user);
-        localStorage.setItem("access_token", res.access_token);
-        
-        // Extract application_id from owned_applications
-        if (res.user.owned_applications && res.user.owned_applications.length > 0) {
-          const appId = res.user.owned_applications[0].id;
+
+      if (res.user) {
+        const extendedUser = res.user as ExtendedUser;
+        setUser(extendedUser);
+
+        // Pick applicationId from response (apiHelpers already saves it to localStorage)
+        let appId: string | null = null;
+        if (extendedUser.owned_applications?.length) {
+          appId = extendedUser.owned_applications[0].id;
+        } else if ((res as any).application?.id) {
+          appId = (res as any).application.id;
+        }
+
+        if (appId) {
           setApplicationId(appId);
-          localStorage.setItem("application_id", appId);
         }
       }
     } finally {
@@ -76,23 +97,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         app_name: appName,
       };
 
-      const response = await registerAPI(payload);
-      
-      // Registration response format: { user, application, access_token, refresh_token }
-      if (response.user && response.access_token) {
-        setUser(response.user);
-        localStorage.setItem("access_token", response.access_token);
-        
-        if (response.refresh_token) {
-          localStorage.setItem("refresh_token", response.refresh_token);
-        }
-        
-        // Set application_id from registration response (application.id field)
-        if (response.application?.id) {
-          setApplicationId(response.application.id);
-          localStorage.setItem("application_id", response.application.id);
-        }
+      const response: RegisterResponse = await registerAPI(payload);
+
+      if (response.application?.id) {
+        setApplicationId(response.application.id);
       }
+
+      // Auto-login (ensures consistency with login flow)
+      await login(email, password);
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +121,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ user, applicationId, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, applicationId, isLoading, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

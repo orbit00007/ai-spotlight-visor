@@ -4,7 +4,6 @@ export const API_ENDPOINTS = {
   // Auth
   login: `${BASE_URL}/users/login`,
   register: `${BASE_URL}/users/register-with-app`,
-  productsWithKeywords: "/products/with-keywords",
 
   // Products
   createProductWithKeywords: `${BASE_URL}/products/with-keywords`,

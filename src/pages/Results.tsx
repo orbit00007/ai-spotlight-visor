@@ -9,10 +9,9 @@ import { ArrowLeft, Calendar, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ResultsData {
-  product: any;
-  search_keywords: any[];
-  message: string;
-  companyName: string;
+  website: string;
+  keywords: string[];
+  isExample?: boolean;
 }
 
 export default function Results() {
@@ -28,19 +27,10 @@ export default function Results() {
       return;
     }
 
-    // Get data from localStorage or navigation state
-    const stored = localStorage.getItem('searchResults');
-    if (stored) {
-      setResultsData(JSON.parse(stored));
-    } else if (location.state) {
-      // Fallback to example data
-      const data = location.state as any;
-      setResultsData({
-        product: { name: data.website || "kommunicate.io" },
-        search_keywords: (data.keywords || ["customer support", "live chat", "chatbot"]).map((kw: string) => ({ keyword: kw })),
-        message: "Example data - please run a real analysis",
-        companyName: data.website || "kommunicate.io"
-      });
+    // Get data from navigation state
+    if (location.state) {
+      const data = location.state as ResultsData;
+      setResultsData(data);
     } else {
       navigate("/input");
     }
@@ -85,14 +75,14 @@ export default function Results() {
               <div className="flex items-center space-x-3">
                 {/* Website Avatar */}
                 <div className="w-10 h-10 rounded-lg bg-gradient-hero flex items-center justify-center text-white font-bold">
-                  {resultsData.companyName.charAt(0).toUpperCase()}
+                  {resultsData.website.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <h1 className="font-semibold text-lg">
-                    {resultsData.companyName}
+                    {resultsData.website}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    {resultsData.message}
+                    These insights come directly from AI answers.
                   </p>
                 </div>
               </div>
@@ -138,7 +128,7 @@ export default function Results() {
                 Navigate by Keyword
               </h3>
               <div className="flex flex-wrap gap-2">
-                {resultsData.search_keywords.map((keywordObj, index) => (
+                {resultsData.keywords.map((keyword, index) => (
                   <Button
                     key={index}
                     variant={
@@ -148,7 +138,7 @@ export default function Results() {
                     onClick={() => setCurrentTab(`keyword-${index}`)}
                     className="text-sm"
                   >
-                    {keywordObj.keyword}
+                    {keyword}
                   </Button>
                 ))}
                 <Button

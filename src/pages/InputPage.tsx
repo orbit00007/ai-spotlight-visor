@@ -30,16 +30,20 @@ import { fetchProductsWithKeywords } from "@/apiHelpers";
 /* =====================
    HELPERS
    ===================== */
-const normalizeDomain = (url: string): string => {
-  let testUrl = url.trim();
+// backend gets https://domain.com/
+const normalizeDomain = (brand: string) => {
+  let domain = brand.trim();
 
-  if (!/^https?:\/\//i.test(testUrl)) {
-    testUrl = "https://" + testUrl;
-  }
+  // Remove existing protocol if user types it
+  domain = domain.replace(/^https?:\/\//i, "");
 
-  const urlObj = new URL(testUrl);
-  return urlObj.hostname.replace(/^www\./i, "");
+  // Remove trailing slashes to avoid duplicates
+  domain = domain.replace(/\/+$/, "");
+
+  // Always add https:// at the start and / at the end
+  return `https://${domain}/`;
 };
+
 
 export default function InputPage() {
   const [brand, setBrand] = useState("");
@@ -70,11 +74,7 @@ export default function InputPage() {
     }
 
     setDnsStatus("checking");
-    
-    
-    // Simulate DNS check with timeout
 
-    // Simulate DNS check with timeout
     setTimeout(() => {
       try {
         const hostname = normalizeDomain(url);
@@ -164,34 +164,40 @@ export default function InputPage() {
     setIsLoading(true);
 
     try {
+      const trimmedBrand = brand.trim();
+
+      // ✅ Fixed payload keys to snake_case
       const payload = {
-        name: brand.trim(),
-        description: "product",
-        website: brand.trim(),
-        business_domain: "Technology",
+        name: trimmedBrand,
+        description: trimmedBrand,
+        website: normalizeDomain(trimmedBrand),
+        business_domain: trimmedBrand,
         application_id: applicationId,
         search_keywords: keywords,
       };
 
+      // ✅ Debugging logs
+      console.log("📦 Sending payload to API:", JSON.stringify(payload, null, 2));
+
       const data = await fetchProductsWithKeywords(payload);
 
-      // Store the API response data
-      const resultData = {
-        product: data.product,
-        search_keywords: data.search_keywords,
-        message: data.message,
-        companyName: data.product?.name || brand.trim()
-      };
-      
-      localStorage.setItem('searchResults', JSON.stringify(resultData));
+      console.log("✅ API Response:", data);
 
       toast({
-        title: "Success!",
-        description: data.message || "Visibility check completed successfully.",
+        title: "Analysis started",
+        description: "Your visibility analysis has been initiated successfully.",
       });
 
-      navigate("/results");
-    } catch (error) {
+      navigate("/results", {
+        state: {
+          website: trimmedBrand,
+          keywords,
+          productId: data.product?.id,
+        },
+      });
+    } catch (error: any) {
+      console.error("❌ API Error:", error.response?.data || error.message);
+
       toast({
         title: "Error",
         description: "Failed to start analysis. Please try again.",
@@ -217,7 +223,6 @@ export default function InputPage() {
      ===================== */
   return (
     <Layout>
-      {/* Background now matches your gray theme */}
       <div className="min-h-screen bg-gray-100">
         <main className="container mx-auto px-4 py-20">
           <div className="max-w-2xl mx-auto text-center space-y-8">
