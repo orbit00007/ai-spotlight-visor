@@ -47,15 +47,14 @@ export interface RegisterResponse {
   refresh_token: string;
 }
 
-/* flexible product payloads supported */
 export interface ProductPayload {
   name: string;
   description: string;
   website: string;
-  business_domain: string;   // ✅ snake_case
-  application_id: string;    // ✅ snake_case
-  search_keywords: string[]; // ✅ snake_case
-} 
+  business_domain: string;
+  application_id: string;
+  search_keywords: string[];
+}
 
 /* =====================
    AXIOS CONFIG
@@ -78,113 +77,143 @@ API.interceptors.request.use((config) => {
 /* =====================
    AUTH HELPERS
    ===================== */
-export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
-  const res: AxiosResponse<LoginResponse> = await API.post(API_ENDPOINTS.login, payload);
+export const login = async (payload: LoginRequest): Promise<LoginResponse | null> => {
+  try {
+    const res: AxiosResponse<LoginResponse> = await API.post(API_ENDPOINTS.login, payload);
 
-  if (res.data.access_token) {
-    localStorage.setItem("access_token", res.data.access_token);
+    if (res.data.access_token) {
+      localStorage.setItem("access_token", res.data.access_token);
 
-    // store first owned application id if present
-    const appId = res.data.user?.owned_applications?.[0]?.id;
-    if (appId) {
-      localStorage.setItem("application_id", appId);
+      const appId = res.data.user?.owned_applications?.[0]?.id;
+      if (appId) {
+        localStorage.setItem("application_id", appId);
+      }
     }
-  }
 
-  return res.data;
+    return res.data;
+  } catch (error) {
+    console.error("login error:", error);
+    return null;
+  }
 };
 
-export const register = async (payload: RegisterRequest): Promise<RegisterResponse> => {
-  const res: AxiosResponse<RegisterResponse> = await API.post(API_ENDPOINTS.register, payload);
+export const register = async (payload: RegisterRequest): Promise<RegisterResponse | null> => {
+  try {
+    const res: AxiosResponse<RegisterResponse> = await API.post(API_ENDPOINTS.register, payload);
 
-  if (res.data.access_token) {
-    localStorage.setItem("access_token", res.data.access_token);
-  }
-  if (res.data.application?.id) {
-    localStorage.setItem("application_id", res.data.application.id);
-  }
+    if (res.data.access_token) {
+      localStorage.setItem("access_token", res.data.access_token);
+    }
+    if (res.data.application?.id) {
+      localStorage.setItem("application_id", res.data.application.id);
+    }
 
-  return res.data;
+    return res.data;
+  } catch (error) {
+    console.error("register error:", error);
+    return null;
+  }
 };
 
 /* =====================
    PRODUCT HELPERS
    ===================== */
-
-/**
- * createProductWithKeywords
- * Accepts either:
- *  - { brand, search_keywords, application_id? }  OR
- *  - full backend-shaped object { name, description, website, business_domain, application_id, search_keywords }
- *
- * Returns backend response.
- */
 export const createProductWithKeywords = async (payload: ProductPayload): Promise<any> => {
-  const appId = (payload as any).application_id || localStorage.getItem("application_id") || "";
+  try {
+    const appId = payload.application_id || localStorage.getItem("application_id") || "";
 
-  // If caller provided `brand`, map to backend fields.
-  if ((payload as any).brand) {
-    const brandTrimmed = (payload as any).brand.trim();
-    const body = {
-      name: brandTrimmed,
-      description: brandTrimmed,
-      website: brandTrimmed,
-      business_domain: brandTrimmed,
-      application_id: appId,
-      search_keywords: (payload as any).search_keywords?.filter((k: string) => k.trim() !== "") || [],
-    };
+    let body;
+    if ((payload as any).brand) {
+      const brandTrimmed = (payload as any).brand.trim();
+      body = {
+        name: brandTrimmed,
+        description: brandTrimmed,
+        website: brandTrimmed,
+        business_domain: brandTrimmed,
+        application_id: appId,
+        search_keywords: (payload as any).search_keywords?.filter((k: string) => k.trim() !== "") || [],
+      };
+    } else {
+      body = {
+        name: payload.name,
+        description: payload.description,
+        website: payload.website,
+        business_domain: payload.business_domain,
+        application_id: appId,
+        search_keywords: (payload.search_keywords || []).filter((k) => k.trim() !== ""),
+      };
+    }
 
     const res = await API.post(API_ENDPOINTS.createProductWithKeywords, body);
     return res.data;
+  } catch (error) {
+    console.error("createProductWithKeywords error:", error);
+    return null;
   }
-
-  // Otherwise assume payload already has backend fields (defensive copy)
-  const {
-    name,
-    description,
-    website,
-    business_domain,
-    search_keywords,
-  } = payload as any;
-
-  const body = {
-    name,
-    description,
-    website,
-    business_domain,
-    application_id: appId,
-    search_keywords: (search_keywords || []).filter((k: string) => k.trim() !== ""),
-  };
-
-  const res = await API.post(API_ENDPOINTS.createProductWithKeywords, body);
-  return res.data;
 };
 
-/* backward-compatible alias — your InputPage can keep importing fetchProductsWithKeywords */
-export const fetchProductsWithKeywords = async (
-  payload: ProductPayload
-): Promise<any> => {
-  const res = await API.post(API_ENDPOINTS.createProductWithKeywords, payload);
-  return res.data;
+export const fetchProductsWithKeywords = async (payload: ProductPayload): Promise<any> => {
+  try {
+    const res = await API.post(API_ENDPOINTS.createProductWithKeywords, payload);
+    return res.data;
+  } catch (error) {
+    console.error("fetchProductsWithKeywords error:", error);
+    return null;
+  }
 };
 
 /* =====================
    ANALYTICS HELPERS
    ===================== */
-export const getProductAnalytics = async (productId: string, date: string, accessToken: string): Promise<any> => {
-  const res = await API.get(API_ENDPOINTS.getProductAnalytics(productId, date), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  return res.data;
+export const getProductAnalytics = async (
+  productId: string,
+  date: string,
+  accessToken: string
+): Promise<any> => {
+  try {
+    const res = await API.get(API_ENDPOINTS.getProductAnalytics(productId, date), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return res?.data || null;
+  } catch (error) {
+    console.error("getProductAnalytics error:", error);
+    return null;
+  }
 };
 
-export const getKeywordAnalytics = async (keywordId: string, date: string, accessToken: string): Promise<any> => {
-  const res = await API.get(API_ENDPOINTS.getKeywordAnalytics(keywordId, date), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  return res.data;
+export const getKeywordAnalytics = async (
+  keywordId: string,
+  date: string,
+  accessToken: string
+): Promise<any> => {
+  try {
+    const res = await API.get(API_ENDPOINTS.getKeywordAnalytics(keywordId, date), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return res?.data || null;
+  } catch (error) {
+    console.error("getKeywordAnalytics error:", error);
+    return null;
+  }
+};
+
+export const getProductsByApplication = async (
+  applicationId: string,
+  accessToken: string
+): Promise<any> => {
+  try {
+    const res = await API.get(API_ENDPOINTS.getProductsByApplication(applicationId), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return res?.data || null;
+  } catch (error) {
+    console.error("getProductsByApplication error:", error);
+    return null;
+  }
 };

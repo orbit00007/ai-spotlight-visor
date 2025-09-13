@@ -91,6 +91,7 @@ const Register = () => {
                   onChange={(e) => setFirstName(e.target.value)}
                   required
                   className="bg-background"
+                  autoComplete="off"
                 />
               </div>
               <div className="space-y-2">
@@ -103,6 +104,7 @@ const Register = () => {
                   onChange={(e) => setLastName(e.target.value)}
                   required
                   className="bg-background"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -118,6 +120,7 @@ const Register = () => {
                 onChange={(e) => setAppName(e.target.value)}
                 required
                 className="bg-background"
+                autoComplete="off"
               />
             </div>
 
@@ -132,6 +135,7 @@ const Register = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-background"
+                autoComplete="off"
               />
             </div>
 
@@ -147,6 +151,7 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="bg-background pr-10"
+                  autoComplete="off"
                 />
                 <Button
                   type="button"
@@ -175,6 +180,7 @@ const Register = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="bg-background"
+                autoComplete="off"
               />
             </div>
 
